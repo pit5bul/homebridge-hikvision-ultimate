@@ -1,0 +1,54 @@
+{
+  "name": "homebridge-hikvision-ultimate",
+  "version": "1.4.0",
+  "description": "Homebridge plugin for Hikvision NVR cameras with ISAPI discovery, motion detection, and FFmpeg streaming",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint src/**.ts --max-warnings=0",
+    "watch": "npm run build && npm link && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "hikvision",
+    "nvr",
+    "camera",
+    "ffmpeg",
+    "isapi",
+    "rtsp",
+    "motion-detection",
+    "homekit"
+  ],
+  "author": "Peter Popa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pit5bul/homebridge-hikvision-ultimate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pit5bul/homebridge-hikvision-ultimate/issues"
+  },
+  "engines": {
+    "node": "^18.17.0 || ^20.9.0 || ^22 || ^24",
+    "homebridge": "^1.6.0 || ^2.0.0-beta.0"
+  },
+  "dependencies": {
+    "ffmpeg-for-homebridge": "^2.1.0",
+    "pick-port": "^2.1.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/xml2js": "^0.4.14",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "homebridge": "^1.7.0",
+    "nodemon": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.3.0"
+  },
+  "homepage": "https://github.com/pit5bul/homebridge-hikvision-ultimate#readme"
+}
