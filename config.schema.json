@@ -80,10 +80,10 @@
         "description": "Timeout for ffprobe when probing streams."
       },
       "videoProcessor": {
-        "title": "Video Processor Path",
+        "title": "Custom FFmpeg Path",
         "type": "string",
         "placeholder": "/usr/bin/ffmpeg",
-        "description": "Path to a custom ffmpeg binary. Leave empty to use the bundled ffmpeg-for-homebridge."
+        "description": "Path to custom FFmpeg binary. Required for hardware encoders (VAAPI, NVENC, QuickSync, etc.) as the bundled FFmpeg doesn't include hardware support. Leave empty to use bundled FFmpeg (software encoding only)."
       },
       "interfaceName": {
         "title": "Network Interface",
@@ -212,14 +212,6 @@
                   "maximum": 1080,
                   "description": "Maximum video height. HomeKit max is 1080."
                 },
-                "maxFPS": {
-                  "title": "Max Frame Rate",
-                  "type": "integer",
-                  "default": 30,
-                  "minimum": 1,
-                  "maximum": 30,
-                  "description": "Maximum frames per second. HomeKit max is 30."
-                },
                 "maxBitrate": {
                   "title": "Max Bitrate (kbps)",
                   "type": "integer",
@@ -234,87 +226,44 @@
                   "minimum": 0,
                   "description": "Minimum video bitrate. Overrides HomeKit if set higher."
                 },
-                "vcodec": {
-                  "title": "Video Codec",
+                "encoder": {
+                  "title": "Video Encoder",
                   "type": "string",
-                  "default": "libx264",
+                  "default": "software",
                   "oneOf": [
-                    { "title": "Software (libx264) - CPU encoding", "enum": ["libx264"] },
-                    { "title": "NVIDIA NVENC (h264_nvenc)", "enum": ["h264_nvenc"] },
-                    { "title": "Intel QuickSync (h264_qsv)", "enum": ["h264_qsv"] },
-                    { "title": "VAAPI (h264_vaapi) - Intel/AMD Linux", "enum": ["h264_vaapi"] },
-                    { "title": "AMD AMF (h264_amf) - Windows", "enum": ["h264_amf"] },
-                    { "title": "Apple VideoToolbox (h264_videotoolbox)", "enum": ["h264_videotoolbox"] },
-                    { "title": "Raspberry Pi V4L2 (h264_v4l2m2m)", "enum": ["h264_v4l2m2m"] },
-                    { "title": "Copy (no re-encoding)", "enum": ["copy"] }
+                    { "title": "Software (libx264) - CPU encoding, works everywhere", "enum": ["software"] },
+                    { "title": "VAAPI - Intel/AMD GPU on Linux (requires custom FFmpeg with VAAPI)", "enum": ["vaapi"] },
+                    { "title": "NVIDIA NVENC - NVIDIA GPU (requires custom FFmpeg with NVENC)", "enum": ["nvenc"] },
+                    { "title": "Intel QuickSync - Intel CPU with iGPU (requires custom FFmpeg with QSV)", "enum": ["quicksync"] },
+                    { "title": "AMD AMF - AMD GPU (requires custom FFmpeg with AMF)", "enum": ["amf"] },
+                    { "title": "Apple VideoToolbox - Mac only", "enum": ["videotoolbox"] },
+                    { "title": "Raspberry Pi V4L2 - RPi 4+", "enum": ["v4l2"] }
                   ],
-                  "description": "Video encoder to use. Software (libx264) works everywhere but uses CPU. Hardware encoders reduce CPU by 70-90% but require compatible GPU."
+                  "description": "Hardware encoder type. Reduces CPU usage by 70-90%. The plugin automatically: (1) detects if input is H.264/H.265 for hardware decode, (2) configures proper filters (scale_vaapi, hwupload, etc.), (3) sets optimal encoder options. For VAAPI with H.264/H.265 input: full GPU pipeline (decode→scale→encode). For other codecs: CPU decode, GPU scale+encode. IMPORTANT: You must set a custom FFmpeg path in Global Advanced settings - the bundled FFmpeg does not include hardware support."
+                },
+                "hwaccelDevice": {
+                  "title": "Hardware Device Path (Advanced)",
+                  "type": "string",
+                  "placeholder": "/dev/dri/renderD128",
+                  "description": "Hardware device path. Default: /dev/dri/renderD128 for VAAPI. Only change if you have multiple GPUs or need a different device."
                 },
                 "audio": {
                   "title": "Enable Audio",
                   "type": "boolean",
-                  "default": false,
-                  "description": "Enable audio streaming. Audio will be transcoded to Opus for HomeKit compatibility."
-                },
-                "acodec": {
-                  "title": "Audio Codec",
-                  "type": "string",
-                  "default": "libopus",
-                  "oneOf": [
-                    { "title": "Opus (libopus) - Recommended", "enum": ["libopus"] },
-                    { "title": "AAC-ELD (libfdk_aac)", "enum": ["libfdk_aac"] },
-                    { "title": "Copy (no transcode)", "enum": ["copy"] }
-                  ],
-                  "description": "Audio encoder. Opus is recommended for HomeKit and automatically transcodes from any camera audio format.",
-                  "condition": {
-                    "functionBody": "return model.cameras && model.cameras[arrayIndices].videoConfig && model.cameras[arrayIndices].videoConfig.audio === true;"
-                  }
-                },
-                "hwaccel": {
-                  "title": "Hardware Acceleration (Decoder)",
-                  "type": "string",
-                  "default": "none",
-                  "oneOf": [
-                    { "title": "None - Software decode", "enum": ["none"] },
-                    { "title": "CUDA - NVIDIA GPU", "enum": ["cuda"] },
-                    { "title": "QSV - Intel QuickSync", "enum": ["qsv"] },
-                    { "title": "VAAPI - Intel/AMD Linux", "enum": ["vaapi"] },
-                    { "title": "D3D11VA - AMD Windows", "enum": ["d3d11va"] },
-                    { "title": "VideoToolbox - Apple", "enum": ["videotoolbox"] }
-                  ],
-                  "description": "Hardware decoder for incoming RTSP stream. Should match your video codec choice. 'none' uses CPU."
-                },
-                "hwaccelDevice": {
-                  "title": "Hardware Device Path",
-                  "type": "string",
-                  "placeholder": "/dev/dri/renderD128",
-                  "description": "Hardware device path (e.g., /dev/dri/renderD128 for VAAPI). Leave empty for default.",
-                  "condition": {
-                    "functionBody": "return model.cameras && model.cameras[arrayIndices].videoConfig && model.cameras[arrayIndices].videoConfig.hwaccel && model.cameras[arrayIndices].videoConfig.hwaccel !== 'none';"
-                  }
+                  "default": true,
+                  "description": "Enable audio streaming. HomeKit will automatically choose Opus or AAC-ELD codec based on device compatibility."
                 },
                 "videoFilter": {
-                  "title": "Video Filter",
+                  "title": "Custom Video Filter (Advanced)",
                   "type": "string",
-                  "placeholder": "scale_cuda=w=-2:h=1080",
-                  "description": "Custom FFmpeg video filter (-vf). Hardware encoders should use hardware filters (scale_cuda, scale_qsv, scale_vaapi). Leave empty for automatic."
+                  "placeholder": "Leave empty for automatic",
+                  "description": "Custom FFmpeg video filter. Leave empty - the plugin automatically uses the correct filter (scale_vaapi, scale_cuda, scale_qsv, etc.) based on your encoder selection. Only override if you need custom filtering."
                 },
                 "encoderOptions": {
-                  "title": "Encoder Options",
+                  "title": "Custom Encoder Options (Advanced)",
                   "type": "string",
-                  "placeholder": "-preset p1 -tune ll -cq 23",
-                  "description": "Encoder-specific options. Examples: NVENC: '-preset p1 -tune ll -cq 23', QSV: '-preset veryfast -global_quality 23', VAAPI: '-compression_level 1 -quality 4'. Leave empty for automatic."
-                },
-                "sourceOptions": {
-                  "title": "FFmpeg Source Options",
-                  "type": "string",
-                  "placeholder": "-rtsp_transport tcp",
-                  "description": "Options for FFmpeg input (-i). Added BEFORE the RTSP URL. Example: '-rtsp_transport tcp' or '-init_hw_device vaapi=foo:/dev/dri/renderD128'."
-                },
-                "additionalCommandline": {
-                  "title": "Additional FFmpeg Options",
-                  "type": "string",
-                  "description": "Additional FFmpeg options appended after encoder settings. For advanced users."
+                  "placeholder": "Leave empty for automatic",
+                  "description": "Override encoder-specific options. Leave empty - the plugin automatically applies optimal settings for each encoder (e.g., '-preset ultrafast -tune zerolatency' for software, '-compression_level 1 -quality 4' for VAAPI). Only override if you know what you're doing."
                 },
                 "packetSize": {
                   "title": "Packet Size",
@@ -324,16 +273,16 @@
                   "description": "RTP packet size. Try smaller values if video is choppy. Must be multiple of 188."
                 },
                 "mapvideo": {
-                  "title": "Video Stream Map",
+                  "title": "Video Stream Map (Advanced)",
                   "type": "string",
-                  "default": "0:0",
-                  "description": "FFmpeg stream mapping for video."
+                  "placeholder": "Leave empty for auto-detect",
+                  "description": "FFmpeg stream mapping for video (e.g., '0:v:0'). Leave empty to let FFmpeg auto-detect the video stream. Only set this if auto-detection fails."
                 },
                 "mapaudio": {
-                  "title": "Audio Stream Map",
+                  "title": "Audio Stream Map (Advanced)",
                   "type": "string",
-                  "default": "0:1",
-                  "description": "FFmpeg stream mapping for audio."
+                  "placeholder": "Leave empty for auto-detect",
+                  "description": "FFmpeg stream mapping for audio (e.g., '0:1' or '0:a:0'). Leave empty to let FFmpeg auto-detect the audio stream. Only set this if auto-detection fails."
                 },
                 "vflip": {
                   "title": "Flip Vertically",
@@ -352,12 +301,6 @@
                   "type": "boolean",
                   "default": false,
                   "description": "Show FFmpeg output in Homebridge log."
-                },
-                "debugReturn": {
-                  "title": "Debug Return Audio",
-                  "type": "boolean",
-                  "default": false,
-                  "description": "Show return audio FFmpeg output in Homebridge log."
                 }
               }
             },
@@ -420,52 +363,48 @@
           "orderable": true,
           "buttonText": "Add Camera",
           "items": [
-            "cameras[].channelId",
-            "cameras[].name",
-            "cameras[].enabled",
-            "cameras[].streamType",
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Video Settings",
+              "title": "Basic Settings",
+              "expandable": true,
+              "expanded": true,
+              "items": [
+                "cameras[].channelId",
+                "cameras[].name",
+                "cameras[].enabled",
+                "cameras[].streamType"
+              ]
+            },
+            {
+              "key": "cameras[]",
+              "type": "section",
+              "title": "Video Quality",
               "expandable": true,
               "expanded": false,
               "items": [
-                "cameras[].videoConfig.source",
-                "cameras[].videoConfig.stillImageSource",
-                "cameras[].videoConfig.maxStreams",
                 "cameras[].videoConfig.maxWidth",
                 "cameras[].videoConfig.maxHeight",
-                "cameras[].videoConfig.maxFPS",
                 "cameras[].videoConfig.maxBitrate",
-                "cameras[].videoConfig.minBitrate",
-                "cameras[].videoConfig.vcodec",
-                "cameras[].videoConfig.audio",
-                "cameras[].videoConfig.acodec"
+                "cameras[].videoConfig.minBitrate"
               ]
             },
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Advanced Video Settings",
+              "title": "Hardware Encoding",
               "expandable": true,
               "expanded": false,
               "items": [
-                "cameras[].videoConfig.packetSize",
-                "cameras[].videoConfig.videoFilter",
-                "cameras[].videoConfig.additionalCommandline",
-                "cameras[].videoConfig.mapvideo",
-                "cameras[].videoConfig.mapaudio",
-                "cameras[].videoConfig.vflip",
-                "cameras[].videoConfig.hflip",
-                "cameras[].videoConfig.debug",
-                "cameras[].videoConfig.debugReturn"
+                "cameras[].videoConfig.encoder",
+                "cameras[].videoConfig.hwaccelDevice",
+                "cameras[].videoConfig.audio"
               ]
             },
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Motion Settings",
+              "title": "Motion Detection",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -476,7 +415,27 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Customization",
+              "title": "Advanced Troubleshooting",
+              "expandable": true,
+              "expanded": false,
+              "items": [
+                "cameras[].videoConfig.source",
+                "cameras[].videoConfig.stillImageSource",
+                "cameras[].videoConfig.encoderOptions",
+                "cameras[].videoConfig.videoFilter",
+                "cameras[].videoConfig.mapvideo",
+                "cameras[].videoConfig.mapaudio",
+                "cameras[].videoConfig.packetSize",
+                "cameras[].videoConfig.vflip",
+                "cameras[].videoConfig.hflip",
+                "cameras[].videoConfig.maxStreams",
+                "cameras[].videoConfig.debug"
+              ]
+            },
+            {
+              "key": "cameras[]",
+              "type": "section",
+              "title": "HomeKit Customization",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -490,7 +449,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Detected Info (Read-Only)",
+              "title": "Detected Stream Info (Read-Only)",
               "expandable": true,
               "expanded": false,
               "items": [

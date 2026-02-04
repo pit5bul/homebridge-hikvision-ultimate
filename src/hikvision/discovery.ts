@@ -138,19 +138,16 @@ export class HikvisionDiscovery {
    * Build FFmpeg still image source string for a channel
    */
   buildFfmpegStillSource(channelId: number, streamType: StreamType = 'mainstream'): string {
-    // Use the ISAPI Streaming endpoint that supports resolution parameters
-    // Format: /ISAPI/Streaming/channels/{channelId}{suffix}/picture
-    // Example: /ISAPI/Streaming/channels/501/picture for channel 5 mainstream
     const suffix = STREAM_TYPE_SUFFIX[streamType];
     const channelPath = `${channelId}${suffix}`;
     
     const encodedUsername = encodeURIComponent(this.username);
     const encodedPassword = encodeURIComponent(this.password);
     
-    // Build URL with authentication
-    const snapshotUrl = `http://${encodedUsername}:${encodedPassword}@${this.host}:80/ISAPI/Streaming/channels/${channelPath}/picture`;
+    // Build URL with authentication and resolution parameters
+    const snapshotUrl = `http://${encodedUsername}:${encodedPassword}@${this.host}:80/ISAPI/Streaming/channels/${channelPath}/picture?videoResolutionWidth=1920&videoResolutionHeight=1080`;
     
-    // Add timeout and image2 format for proper JPEG handling
-    return `-timeout 5000000 -f image2 -i ${snapshotUrl}`;
+    // Return only -i and URL (snapshot handler adds other flags)
+    return `-i ${snapshotUrl}`;
   }
 }

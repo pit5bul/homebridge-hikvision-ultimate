@@ -87,17 +87,13 @@ export interface VideoConfig {
   minBitrate?: number;
 
   // Codec and Hardware Acceleration
-  vcodec?: string;
+  vcodec?: string;               // Auto-derived from encoder type
   encoder?: EncoderType;
-  encoderOptions?: string;      // Custom encoder options
-  decoderFlags?: string;         // Hardware decoder flags (applied before -i)
-  hwaccel?: string;              // Hardware decoder type (cuda, qsv, vaapi, etc.)
+  encoderOptions?: string;       // Custom encoder options
   hwaccelDevice?: string;        // Hardware device path (/dev/dri/renderD128, etc.)
-  sourceOptions?: string;        // FFmpeg source options (before -i)
 
   // Audio
   audio?: boolean;
-  acodec?: string;
 
   // Stream mapping
   mapvideo?: string;
@@ -110,7 +106,6 @@ export interface VideoConfig {
 
   // Advanced
   packetSize?: number;
-  additionalCommandline?: string;
 
   // Debug
   debug?: boolean;

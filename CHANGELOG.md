@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-04
+
+### 🚀 VAAPI Hardware Acceleration Quality Profiles
+
+Major update adding quality profile system for hardware encoders with optimized GOP sizes for HomeKit streaming.
+
+### Added
+- **Quality Profile System**: New UI dropdown for selecting encoding quality (Speed/Balanced/Quality)
+- **7 Hardware Encoder Presets**: VAAPI, QuickSync, NVENC, AMF, VideoToolbox, Jetson, RK MPP
+- **HomeKit-Optimized GOP Sizes**: Fixed keyframe intervals to 1-2 seconds for reliable streaming
+  - Speed: 2 second keyframes (25 frames @ 12.5fps)
+  - Balanced: 1.5 second keyframes (19 frames @ 12.5fps)
+  - Quality: 1 second keyframes (13 frames @ 12.5fps)
+
+### Fixed
+- **VAAPI Filter Chain**: Removed `-color_range mpeg` that caused auto-insertion of CPU scaler
+- **HomeKit Stream Stability**: Reduced GOP from 120 to 13-25 frames for better compatibility
+- **Frame Rate Detection**: GOP sizes now properly scaled to source framerate
+- **VAAPI Parameters**: Changed from unsupported `-b_depth` to `-bf` for B-frames
+
+### Changed
+- **Full GPU Pipeline**: Decode → Scale → Encode stays on GPU (80% CPU reduction)
+- **Minimal Parameters**: Only universally supported VAAPI options (`-bf`, `-g`)
+- **Config Schema**: Added quality profile dropdown in UI
+
+### Performance
+- VAAPI Speed profile: ~5% CPU, ~40% GPU utilization
+- VAAPI Quality profile: ~10% CPU, ~30% GPU utilization
+- No more CPU↔GPU memory transfers
+
 ## [1.2.0] - 2026-01-28
 
 ### 🎉 Production Ready Release

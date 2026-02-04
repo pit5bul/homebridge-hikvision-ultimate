@@ -19,17 +19,13 @@ export declare const DEFAULT_VIDEO_CONFIG: {
     maxStreams: number;
     maxWidth: number;
     maxHeight: number;
-    maxFPS: number;
     maxBitrate: number;
     minBitrate: number;
-    vcodec: string;
     encoder: "software";
     audio: boolean;
-    acodec: string;
     packetSize: number;
-    mapvideo: string;
-    mapaudio: string;
-    additionalCommandline: string;
+    mapvideo: undefined;
+    mapaudio: undefined;
     debug: boolean;
     debugReturn: boolean;
     vflip: boolean;
@@ -74,15 +70,3 @@ export declare const DEFAULT_RTSP_PORT = 554;
  * Motion event types from ISAPI
  */
 export declare const MOTION_EVENT_TYPES: string[];
-/**
- * Hardware encoder presets for FFmpeg with proper initialization
- * Each preset includes decoder acceleration, encoder settings, and video filters
- */
-export interface EncoderPreset {
-    vcodec: string;
-    decoderFlags: string;
-    encoderFlags: string;
-    videoFilter?: string;
-    description: string;
-}
-export declare const ENCODER_PRESETS: Record<string, EncoderPreset>;

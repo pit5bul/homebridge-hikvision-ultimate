@@ -18,7 +18,6 @@ import {
   DEFAULT_PLATFORM_CONFIG,
   DEFAULT_CAMERA_CONFIG,
   DEFAULT_VIDEO_CONFIG,
-  ENCODER_PRESETS,
 } from './settings';
 import { HikvisionApi } from './hikvision/api';
 import { HikvisionDiscovery } from './hikvision/discovery';
@@ -254,12 +253,9 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         maxStreams: DEFAULT_VIDEO_CONFIG.maxStreams,
         maxWidth: DEFAULT_VIDEO_CONFIG.maxWidth,
         maxHeight: DEFAULT_VIDEO_CONFIG.maxHeight,
-        maxFPS: DEFAULT_VIDEO_CONFIG.maxFPS,
         maxBitrate: DEFAULT_VIDEO_CONFIG.maxBitrate,
-        vcodec: DEFAULT_VIDEO_CONFIG.vcodec,
         audio: DEFAULT_VIDEO_CONFIG.audio,
         packetSize: DEFAULT_VIDEO_CONFIG.packetSize,
-        additionalCommandline: DEFAULT_VIDEO_CONFIG.additionalCommandline,
         debug: DEFAULT_VIDEO_CONFIG.debug,
       },
     };
@@ -332,69 +328,38 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         ...(camera.videoConfig || {}),
       };
       
-      // Apply hardware encoder settings based on vcodec selection
-      const vcodec = camera.videoConfig.vcodec || 'libx264';
+      // Determine encoder type - support both new 'encoder' field and legacy 'vcodec' field
+      let encoderType: 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
+      let vcodec: string;
       
-      // Map vcodec to encoder preset for automatic configuration
-      const codecToEncoder: Record<string, string> = {
-        'libx264': 'software',
-        'h264_nvenc': 'nvenc',
-        'h264_qsv': 'quicksync',
-        'h264_vaapi': 'vaapi',
-        'h264_amf': 'amf',
-        'h264_videotoolbox': 'videotoolbox',
-        'h264_v4l2m2m': 'v4l2',
-      };
-      
-      const encoderType = codecToEncoder[vcodec] || 'software';
-      const preset = ENCODER_PRESETS[encoderType];
-      
-      if (preset && vcodec !== 'copy') {
-        // Apply automatic settings if user hasn't specified custom options
-        
-        // Decoder flags (hardware decoding)
-        if (!camera.videoConfig.sourceOptions && preset.decoderFlags) {
-          camera.videoConfig.decoderFlags = preset.decoderFlags;
-          this.log.debug(`Camera ${camera.name} decoder flags: ${preset.decoderFlags}`);
-        } else if (camera.videoConfig.sourceOptions) {
-          // User specified sourceOptions, use those instead
-          camera.videoConfig.decoderFlags = camera.videoConfig.sourceOptions;
-          this.log.debug(`Camera ${camera.name} using custom source options: ${camera.videoConfig.sourceOptions}`);
-        } else if (camera.videoConfig.hwaccel && camera.videoConfig.hwaccel !== 'none') {
-          // User specified hwaccel dropdown, build decoder flags
-          const hwaccelFlags = this.buildHwaccelFlags(camera.videoConfig.hwaccel, camera.videoConfig.hwaccelDevice);
-          camera.videoConfig.decoderFlags = hwaccelFlags;
-          this.log.debug(`Camera ${camera.name} decoder flags from hwaccel: ${hwaccelFlags}`);
-        }
-        
-        // Encoder flags
-        if (!camera.videoConfig.encoderOptions && preset.encoderFlags) {
-          const userFlags = camera.videoConfig.additionalCommandline || '';
-          camera.videoConfig.additionalCommandline = preset.encoderFlags + (userFlags ? ' ' + userFlags : '');
-          this.log.debug(`Camera ${camera.name} encoder flags: ${preset.encoderFlags}`);
-        } else if (camera.videoConfig.encoderOptions) {
-          // User specified custom encoder options
-          const userFlags = camera.videoConfig.additionalCommandline || '';
-          camera.videoConfig.additionalCommandline = camera.videoConfig.encoderOptions + (userFlags ? ' ' + userFlags : '');
-          this.log.debug(`Camera ${camera.name} using custom encoder options: ${camera.videoConfig.encoderOptions}`);
-        }
-        
-        // Video filter (hardware scaling)
-        if (!camera.videoConfig.videoFilter && preset.videoFilter) {
-          camera.videoConfig.videoFilter = preset.videoFilter;
-          this.log.debug(`Camera ${camera.name} video filter: ${preset.videoFilter}`);
-        }
-        
-        this.log.info(`Camera ${camera.name} using ${vcodec} (${encoderType} mode)`);
+      if (camera.videoConfig.encoder) {
+        // New way: use encoder field directly
+        encoderType = camera.videoConfig.encoder;
+        // vcodec will be auto-derived in delegate.ts
+      } else if (camera.videoConfig.vcodec) {
+        // Legacy way: map vcodec to encoder type
+        vcodec = camera.videoConfig.vcodec;
+        const codecToEncoder: Record<string, typeof encoderType> = {
+          'libx264': 'software',
+          'h264_nvenc': 'nvenc',
+          'h264_qsv': 'quicksync',
+          'h264_vaapi': 'vaapi',
+          'h264_amf': 'amf',
+          'h264_videotoolbox': 'videotoolbox',
+          'h264_v4l2m2m': 'v4l2',
+        };
+        encoderType = codecToEncoder[vcodec] || 'software';
+        camera.videoConfig.encoder = encoderType;
       } else {
-        this.log.info(`Camera ${camera.name} using ${vcodec}`);
+        // Default to software
+        encoderType = 'software';
+        camera.videoConfig.encoder = encoderType;
       }
       
-      // Ensure audio codec is set to libopus for HomeKit compatibility
-      if (!camera.videoConfig.acodec || camera.videoConfig.acodec === 'libfdk_aac') {
-        camera.videoConfig.acodec = 'libopus';
-        this.log.debug(`Camera ${camera.name} audio codec set to libopus for HomeKit compatibility`);
-      }
+      // No longer using ENCODER_PRESETS - delegate.ts auto-configures everything
+      
+      // Just log what encoder type is being used
+      this.log.info(`Camera ${camera.name} using ${encoderType} encoder`);
       
       // Only set source if not already set
       if (!camera.videoConfig.source) {
@@ -409,7 +374,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
       }
       
       // Log applied configuration for debugging
-      this.log.info(`Camera ${camera.name} config: ${camera.videoConfig.maxWidth}x${camera.videoConfig.maxHeight}@${camera.videoConfig.maxFPS}fps, ${camera.videoConfig.maxBitrate}kbps`);
+      this.log.info(`Camera ${camera.name} config: ${camera.videoConfig.maxWidth}x${camera.videoConfig.maxHeight}, ${camera.videoConfig.maxBitrate}kbps`);
     }
 
     const cameraAccessory = new CameraAccessory(this.api, accessory, camera, this.ffmpegPath, this.log);
@@ -422,32 +387,6 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     } else {
       this.log.debug(`Skipping registration for existing accessory: ${camera.name}`);
     }
-  }
-
-  private buildHwaccelFlags(hwaccel: string, device?: string): string {
-    const flags: string[] = ['-hwaccel', hwaccel];
-    
-    switch (hwaccel) {
-      case 'cuda':
-        flags.push('-hwaccel_output_format', 'cuda');
-        break;
-      case 'qsv':
-        flags.push('-hwaccel_output_format', 'qsv');
-        flags.push('-init_hw_device', 'qsv=hw');
-        break;
-      case 'vaapi':
-        flags.push('-hwaccel_device', device || '/dev/dri/renderD128');
-        flags.push('-hwaccel_output_format', 'vaapi');
-        break;
-      case 'd3d11va':
-        flags.push('-hwaccel_output_format', 'd3d11');
-        break;
-      case 'videotoolbox':
-        // No additional flags needed
-        break;
-    }
-    
-    return flags.join(' ');
   }
 
   private cleanupOrphanedAccessories(cameras: CameraConfig[]): void {

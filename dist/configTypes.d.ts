@@ -59,19 +59,14 @@ export interface VideoConfig {
     vcodec?: string;
     encoder?: EncoderType;
     encoderOptions?: string;
-    decoderFlags?: string;
-    hwaccel?: string;
     hwaccelDevice?: string;
-    sourceOptions?: string;
     audio?: boolean;
-    acodec?: string;
     mapvideo?: string;
     mapaudio?: string;
     videoFilter?: string;
     vflip?: boolean;
     hflip?: boolean;
     packetSize?: number;
-    additionalCommandline?: string;
     debug?: boolean;
     debugReturn?: boolean;
 }

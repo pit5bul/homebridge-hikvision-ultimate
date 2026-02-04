@@ -21,7 +21,6 @@ export declare class HikvisionPlatform implements DynamicPlatformPlugin {
     private createCameraConfig;
     private probeAllCameras;
     private createCameraAccessory;
-    private buildHwaccelFlags;
     private cleanupOrphanedAccessories;
     private startMotionListener;
     private saveConfig;
