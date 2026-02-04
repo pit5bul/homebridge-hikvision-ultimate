@@ -161,19 +161,14 @@ Your existing cameras will continue to work. New features:
 
 ### Planned Features
 - [ ] Two-way audio support
-- [ ] PTZ camera control
 - [ ] Recording triggers from HomeKit
 - [ ] Multi-NVR support
 - [ ] Advanced motion zones
-- [ ] Substream for remote viewing
 - [ ] Webhook support for events
-- [ ] Home Assistant integration
 
 ### Under Consideration
 - [ ] Doorbell support
 - [ ] Face detection integration
-- [ ] Cloud recording support
-- [ ] Mobile app notifications
 
 ---
 
