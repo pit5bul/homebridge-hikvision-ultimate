@@ -228,7 +228,83 @@ Enable hardware acceleration:
 
 ## 📝 Changelog
 
-### v1.2.0 (Latest)
+## 📊 What's New in v1.5.0 (Latest}
+
+### Major Features
+✨ **Quality Profile System**
+- Speed, Balanced, Quality presets
+- 7 hardware encoders supported
+- UI dropdown in Homebridge Config
+
+🐛 **VAAPI Fix**
+- Removed `-color_range mpeg` causing CPU scaler insertion
+- Full GPU pipeline working: decode → scale → encode
+- 80% CPU reduction achieved
+
+🎯 **HomeKit Optimization**
+- GOP sizes: 1-2 seconds (was 9.6 seconds)
+- No more 19s disconnections
+- Better seeking and buffering
+
+### Performance (AMD VAAPI)
+- **Speed**: 5% CPU, 40% GPU
+- **Balanced**: 7% CPU, 35% GPU  
+- **Quality**: 10% CPU, 30% GPU
+
+### Backward Compatibility
+✅ Fully compatible with v1.4.0
+✅ Auto-migration (defaults to "balanced")
+✅ No breaking changes
+
+## 🧪 Testing Status
+
+### Tested On
+- [x] AMD Radeon GPU (VAAPI)
+- [x] Proxmox LXC Container
+- [x] Ubuntu 24 / Debian
+- [x] FFmpeg 8.0.1
+- [x] Hikvision NVR (HEVC 4K @ 12.5 FPS)
+
+### Test Results
+- [x] Stream stability: ✅ Continuous streaming (no 19s disconnects)
+- [x] CPU usage: ✅ 5-10% (was 30-40%)
+- [x] GPU usage: ✅ 30-40%
+- [x] Quality: ✅ No visual degradation
+- [x] Latency: ✅ <300ms
+- [x] HomeKit: ✅ Thumbnails load instantly
+- [x] Seeking: ✅ Fast and responsive
+
+### Pending Tests
+- [ ] Intel QuickSync
+- [ ] NVIDIA NVENC
+- [ ] Apple VideoToolbox
+- [ ] ARM devices (Jetson, Rockchip)
+
+## 📁 File Structure
+
+```
+homebridge-hikvision-ultimate/
+├── src/
+│   ├── configTypes.ts          ← Modified (QualityProfile type)
+│   ├── settings.ts             ← Modified (ENCODER_QUALITY_PRESETS)
+│   ├── streaming/
+│   │   └── delegate.ts         ← Modified (quality profiles, color_range fix)
+│   └── ...
+├── config.schema.json          ← Modified (UI dropdown)
+├── package.json                ← Modified (version 1.5.0)
+├── CHANGELOG.md                ← Modified (v1.5.0 entry)
+├── .gitignore                  ← Created
+└── README.md
+```
+
+## 🔗 Important Links
+
+### GitHub
+- **Repository**: https://github.com/pit5bul/homebridge-hikvision-ultimate
+- **Releases**: https://github.com/pit5bul/homebridge-hikvision-ultimate/releases
+- **Issues**: https://github.com/pit5bul/homebridge-hikvision-ultimate/issues
+
+### v1.2.0
 - ✅ Auto-save discovered cameras to config.json
 - ✅ Improved cleanup with better logging
 - ✅ Enhanced first-run experience
