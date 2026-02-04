@@ -4,6 +4,7 @@
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion detection, and hardware-accelerated streaming.
+NOTE: Install a ffmpeg version that is compiled with Hardware Encoders for the system you are planning to use - Redirect to the bin via the UI config
 
 ## ✨ Features
 
