@@ -34,7 +34,13 @@ export class HikvisionEvents {
       return;
     }
 
-    this.log.info('Starting motion event stream...');
+    this.log.info('🎬 Starting motion event stream...');
+    this.log.info(`📡 Connecting to: /ISAPI/Event/notification/alertStream`);
+    if (this.listeners.size > 0) {
+      this.log.info(`👂 Registered listeners for ${this.listeners.size} camera(s)`);
+    } else {
+      this.log.warn('⚠️  No cameras registered for motion events!');
+    }
 
     this.eventStream = this.api.openEventStream(
       '/ISAPI/Event/notification/alertStream',
@@ -82,6 +88,11 @@ export class HikvisionEvents {
    * Handle incoming data chunk from event stream
    */
   private handleChunk(chunk: string): void {
+    // Log first chunk to confirm stream is working
+    if (this.buffer.length === 0 && chunk.length > 0) {
+      this.log.info('✅ Event stream connected and receiving data');
+    }
+    
     this.buffer += chunk;
 
     // Look for complete XML events
@@ -111,9 +122,29 @@ export class HikvisionEvents {
    */
   private parseEvent(xml: string): void {
     try {
-      // Extract channelID
-      const channelMatch = xml.match(/<channelID>(\d+)<\/channelID>/);
+      // Extract channelID - try multiple tag variations
+      let channelMatch = xml.match(/<channelID>(\d+)<\/channelID>/);
       if (!channelMatch) {
+        // Try lowercase variant
+        channelMatch = xml.match(/<channelId>(\d+)<\/channelId>/);
+      }
+      if (!channelMatch) {
+        // Try dynamic channel ID (some NVR models)
+        channelMatch = xml.match(/<dynChannelID>(\d+)<\/dynChannelID>/);
+      }
+      if (!channelMatch) {
+        // Try inputIOPortID (for some NVR event types)
+        channelMatch = xml.match(/<inputIOPortID>(\d+)<\/inputIOPortID>/);
+      }
+      
+      if (!channelMatch) {
+        // Log the problematic XML when debug enabled
+        if (this.debug) {
+          this.log.debug('❌ Event missing channelID/channelId/dynChannelID. Raw XML:');
+          this.log.debug(xml);
+        } else {
+          this.log.debug('Event missing channelID (enable debugMotion to see raw XML)');
+        }
         return;
       }
       const channelId = parseInt(channelMatch[1], 10);
@@ -121,30 +152,44 @@ export class HikvisionEvents {
       // Extract eventType
       const eventTypeMatch = xml.match(/<eventType>([^<]+)<\/eventType>/);
       if (!eventTypeMatch) {
+        if (this.debug) {
+          this.log.debug(`Event from channel ${channelId} missing eventType. Raw XML:`);
+          this.log.debug(xml);
+        } else {
+          this.log.debug(`Event from channel ${channelId} missing eventType`);
+        }
         return;
       }
       const eventType = eventTypeMatch[1];
 
+      // Extract eventState (active/inactive)
+      const stateMatch = xml.match(/<eventState>([^<]+)<\/eventState>/);
+      const eventState = stateMatch ? stateMatch[1] : 'unknown';
+      const active = stateMatch ? stateMatch[1].toLowerCase() === 'active' : true;
+
+      // Log ALL events when debug enabled (before filtering)
+      if (this.debug) {
+        this.log.debug(`📨 Event received: channel=${channelId}, type=${eventType}, state=${eventState}`);
+      }
+
       // Check if this is a motion-related event
       if (!MOTION_EVENT_TYPES.includes(eventType)) {
         if (this.debug) {
-          this.log.debug(`Ignoring non-motion event type: ${eventType}`);
+          this.log.debug(`⏭️  Ignoring non-motion event type: ${eventType} (not in supported list)`);
         }
         return;
       }
 
-      // Extract eventState (active/inactive)
-      const stateMatch = xml.match(/<eventState>([^<]+)<\/eventState>/);
-      const active = stateMatch ? stateMatch[1].toLowerCase() === 'active' : true;
-
-      if (this.debug) {
-        this.log.debug(`Motion event: channel=${channelId}, type=${eventType}, active=${active}`);
-      }
+      this.log.info(`🚨 Motion event: channel=${channelId}, type=${eventType}, active=${active}`);
 
       // Notify listeners
       this.notifyListeners(channelId, eventType, active);
     } catch (err) {
       this.log.warn(`Failed to parse event: ${err}`);
+      if (this.debug) {
+        this.log.debug('Raw XML that failed to parse:');
+        this.log.debug(xml);
+      }
     }
   }
 
@@ -154,12 +199,19 @@ export class HikvisionEvents {
   private notifyListeners(channelId: number, eventType: string, active: boolean): void {
     const callbacks = this.listeners.get(channelId);
     if (callbacks) {
+      this.log.info(`📢 Notifying ${callbacks.length} listener(s) for channel ${channelId}`);
       for (const callback of callbacks) {
         try {
           callback(channelId, eventType, active);
         } catch (err) {
           this.log.error(`Error in motion callback: ${err}`);
         }
+      }
+    } else {
+      this.log.warn(`⚠️  No listeners registered for channel ${channelId} (event type: ${eventType})`);
+      if (this.listeners.size > 0) {
+        const registeredChannels = Array.from(this.listeners.keys()).join(', ');
+        this.log.warn(`   Registered channels: ${registeredChannels}`);
       }
     }
   }

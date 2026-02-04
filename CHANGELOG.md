@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-02-05
+
+### 🐛 Motion Detection Improvements
+
+Critical fixes for motion detection reliability and debugging.
+
+### Fixed
+- **Channel ID Parsing**: Added support for multiple XML tag variants used by different Hikvision NVR models
+  - Now supports: `channelID`, `channelId` (lowercase), `dynChannelID`, `inputIOPortID`
+  - Fixes "Event missing channelID" errors on some NVR models
+- **Event Stream Logging**: Improved diagnostic messages for troubleshooting
+  - Full raw XML logging when `debugMotion: true` for malformed events
+  - Clear indication of which channel IDs are registered vs received
+  - Better error messages for debugging event parsing issues
+
+### Added
+- **Enhanced Debug Logging**: When `debugMotion: true`, shows:
+  - Event stream connection status with emoji indicators
+  - Number of registered camera listeners on startup
+  - Complete raw XML for events that fail to parse
+  - All received events (including non-motion types) before filtering
+  - Listener notification details (which cameras received events)
+- **Startup Diagnostics**: Motion event stream now logs:
+  - Connection endpoint URL
+  - Number of cameras registered for motion events
+  - Warning if no cameras are registered
+  - Confirmation when event stream receives first data
+
+### Changed
+- Motion event parser now tries multiple channel ID tag formats before giving up
+- Debug logs now include emoji indicators for better readability
+- Error messages provide actionable guidance (e.g., "enable debugMotion to see raw XML")
+
+### Documentation
+- Added comprehensive motion detection troubleshooting guide
+- Includes manual testing with curl commands
+- NVR configuration checklist
+- Common issues and solutions
+
 ## [1.5.0] - 2026-02-04
 
 ### 🚀 VAAPI Hardware Acceleration Quality Profiles
@@ -161,14 +200,19 @@ Your existing cameras will continue to work. New features:
 
 ### Planned Features
 - [ ] Two-way audio support
+- [ ] PTZ camera control
 - [ ] Recording triggers from HomeKit
 - [ ] Multi-NVR support
 - [ ] Advanced motion zones
+- [ ] Substream for remote viewing
 - [ ] Webhook support for events
+- [ ] Home Assistant integration
 
 ### Under Consideration
 - [ ] Doorbell support
 - [ ] Face detection integration
+- [ ] Cloud recording support
+- [ ] Mobile app notifications
 
 ---
 
