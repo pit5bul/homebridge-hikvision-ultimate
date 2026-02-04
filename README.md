@@ -310,6 +310,7 @@ Enable hardware acceleration:
 ## 🐛 Known Issues
 
 - ffprobe not bundled: Set `"probeOnStartup": false` (default)
+- ffmpeg included is not complied with hardware acceleration: Set "Global Advanced"/"Custom FFmpeg Path" to your custom complied bin location 
 - Some NVR models may require different ISAPI endpoints for snapshots
 
 ## 📝 Changelog
