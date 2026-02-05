@@ -359,8 +359,8 @@ class StreamingDelegate {
         // Video encoding settings
         const isHardwareEncoder = encoder !== 'software';
         const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software
-        const videoFormat = isHardwareEncoder ? '' : ' -f rawvideo'; // Only use rawvideo for software
-        ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'} -codec:v ${vcodec}${pixFmt} -color_range mpeg${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''}${encoderOptions ? ` ${encoderOptions}` : ''}${bitrate > 0 ? ` -b:v ${bitrate}k` : ''}${videoFormat} -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
+        const colorRange = isHardwareEncoder ? ' -color_range mpeg' : ''; // Only for hardware encoders
+        ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'} -codec:v ${vcodec}${pixFmt}${colorRange}${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''}${encoderOptions ? ` ${encoderOptions}` : ''}${bitrate > 0 ? ` -b:v ${bitrate}k` : ''} -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
         // Video Stream
         ffmpegArgs += ` -ssrc ${sessionInfo.videoSSRC} -f rtp`
             + ` -srtp_out_suite AES_CM_128_HMAC_SHA1_80`

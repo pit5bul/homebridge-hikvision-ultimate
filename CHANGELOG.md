@@ -5,6 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-02-05
+
+### 🐛 Critical Fix - Software Encoding Video Output
+
+Fixed a critical bug preventing video playback in software encoding mode.
+
+### Fixed
+- **Software Encoding Playback**: Removed incorrect `-f rawvideo` parameter from software encoding commands
+  - This parameter was causing video to not play/render in HomeKit
+  - Software encoding now outputs directly to RTP format (correct for streaming)
+  - Stream encodes but doesn't display was caused by this format mismatch
+
+### Technical Details
+The `-f rawvideo` format specifier was incorrectly being added to software encoding commands. This caused FFmpeg to try outputting raw video data instead of properly formatted RTP packets for HomeKit streaming.
+
+**Before (v1.5.2 - BROKEN):**
+```bash
+# Software encoding (INCORRECT - had -f rawvideo)
+-codec:v libx264 ... -f rawvideo -payload_type 99 -ssrc X -f rtp srtp://...
+                     ^^^^^^^^^^^^
+                     Causes playback failure!
+```
+
+**After (v1.5.3 - FIXED):**
+```bash
+# Software encoding (CORRECT - no -f rawvideo)
+-codec:v libx264 ... -payload_type 99 -ssrc X -f rtp srtp://...
+```
+
+### Impact
+- **Critical** for software encoding users - video streams but doesn't play
+- FFmpeg shows successful encoding but HomeKit shows black screen or "No Response"
+- Hardware encoding was not affected by this bug
+
+### Root Cause
+The `videoFormat` variable logic was backwards:
+```typescript
+// WRONG (v1.5.2)
+const videoFormat = isHardwareEncoder ? '' : ' -f rawvideo';
+
+// FIXED (v1.5.3) 
+// Removed entirely - not needed for RTP output
+```
+
+### Compatibility
+- ✅ Fully backward compatible
+- ✅ No config changes required  
+- ✅ No breaking changes
+- ✅ Hardware encoding unchanged
+
+### Who Should Update
+- **CRITICAL** if using software encoding (`"encoder": "software"`) - video doesn't play
+- **Required** if you see: "Stream starts but video is black/frozen"
+- **Not affected** if using hardware encoding (VAAPI, NVENC, etc.)
+
+## [1.5.2] - 2026-02-05
+
+### 🐛 Critical Fix - Software Encoding
+
+Fixed a critical bug where `-color_range mpeg` parameter was being added to ALL encoders, including software encoding.
+
+### Fixed
+- **Software Encoding**: Removed `-color_range mpeg` from software (libx264) encoding commands
+  - This parameter was causing swscaler warnings and potential color space issues
+  - Parameter is now ONLY added for hardware encoders (VAAPI, NVENC, AMF, etc.)
+  - Software encoding now uses clean FFmpeg defaults
+- **Hardware Encoding**: Preserved `-color_range mpeg` for hardware encoders where it's needed for proper color space handling in GPU pipeline
+
+### Technical Details
+The `-color_range mpeg` parameter is required for hardware encoders to maintain proper color space (limited range) in the GPU pipeline. However, it was incorrectly being added to software encoding commands, where it's not needed and can cause issues with the software scaler.
+
+**Before (v1.5.0-1.5.1):**
+```bash
+# Software encoding (INCORRECT - had color_range)
+-codec:v libx264 -pix_fmt yuv420p -color_range mpeg -filter:v scale=...
+```
+
+**After (v1.5.2):**
+```bash
+# Software encoding (CORRECT - no color_range)
+-codec:v libx264 -pix_fmt yuv420p -filter:v scale=...
+
+# Hardware encoding (CORRECT - still has color_range)  
+-codec:v h264_vaapi -color_range mpeg -filter:v format=nv12|vaapi,hwupload...
+```
+
+### Compatibility
+- ✅ Fully backward compatible
+- ✅ No config changes required
+- ✅ No breaking changes
+
+### Who Should Update
+- **Critical** if using software encoding (you'll see swscaler warnings in logs)
+- **Recommended** for everyone as it improves code correctness
+- **Not urgent** if using hardware encoding (already working correctly)
+
 ## [1.5.1] - 2026-02-05
 
 ### 🐛 Motion Detection Improvements

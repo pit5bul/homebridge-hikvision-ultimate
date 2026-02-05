@@ -310,10 +310,15 @@ Enable hardware acceleration:
 ## 🐛 Known Issues
 
 - ffprobe not bundled: Set `"probeOnStartup": false` (default)
-- ffmpeg included is not complied with hardware acceleration: Set "Global Advanced"/"Custom FFmpeg Path" to your custom complied bin location 
 - Some NVR models may require different ISAPI endpoints for snapshots
 
 ## 📝 Changelog
+### v1.5.3
+- 🐛 **Fixed**:`-f rawvideo` removal (video now plays!)
+
+### v1.5.2
+- 🐛 **Fixed**:-color_range mpeg` for software encoding
+- ⚠️ Exposed videoFormat bug (video doesn't play)
 
 ### v1.5.1 (2026-02-05) - Latest
 - 🐛 **Fixed**: Channel ID parsing for multiple XML tag variants (channelID, channelId, dynChannelID, inputIOPortID)
