@@ -45,6 +45,10 @@ export interface CameraConfig {
  */
 export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
 /**
+ * Quality profile for hardware encoders
+ */
+export type QualityProfile = 'speed' | 'balanced' | 'quality';
+/**
  * Video configuration for a camera
  */
 export interface VideoConfig {
@@ -58,6 +62,7 @@ export interface VideoConfig {
     minBitrate?: number;
     vcodec?: string;
     encoder?: EncoderType;
+    qualityProfile?: QualityProfile;
     encoderOptions?: string;
     hwaccelDevice?: string;
     audio?: boolean;

@@ -71,6 +71,11 @@ export interface CameraConfig {
 export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
 
 /**
+ * Quality profile for hardware encoders
+ */
+export type QualityProfile = 'speed' | 'balanced' | 'quality';
+
+/**
  * Video configuration for a camera
  */
 export interface VideoConfig {
@@ -89,6 +94,7 @@ export interface VideoConfig {
   // Codec and Hardware Acceleration
   vcodec?: string;               // Auto-derived from encoder type
   encoder?: EncoderType;
+  qualityProfile?: QualityProfile; // Quality profile for hardware encoders
   encoderOptions?: string;       // Custom encoder options
   hwaccelDevice?: string;        // Hardware device path (/dev/dri/renderD128, etc.)
 

@@ -313,12 +313,6 @@ Enable hardware acceleration:
 - Some NVR models may require different ISAPI endpoints for snapshots
 
 ## 📝 Changelog
-### v1.5.3
-- 🐛 **Fixed**:`-f rawvideo` removal (video now plays!)
-
-### v1.5.2
-- 🐛 **Fixed**:-color_range mpeg` for software encoding
-- ⚠️ Exposed videoFormat bug (video doesn't play)
 
 ### v1.5.1 (2026-02-05) - Latest
 - 🐛 **Fixed**: Channel ID parsing for multiple XML tag variants (channelID, channelId, dynChannelID, inputIOPortID)
@@ -368,7 +362,7 @@ Issues and pull requests welcome! Please test thoroughly before submitting.
 
 ## 📜 License
 
-Personal‑use, Non‑Commercial license
+MIT
 
 ## 🙏 Credits
 

@@ -366,21 +366,76 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     const mtu = this.videoConfig.packetSize || 1316;
     let encoderOptions = this.videoConfig.encoderOptions;
     
+    // Quality profile for hardware encoders (controls GOP size and B-frames)
+    const qualityProfile = this.videoConfig.qualityProfile || 'balanced';
+    let gopSize = 0; // Will be calculated based on FPS and profile
+    let bframes = 0;
+    
     // Set default encoder options based on actual vcodec being used
     // KEEP MINIMAL - many hardware encoders work best with NO options!
     if (!encoderOptions) {
       if (vcodec === 'libx264') {
         encoderOptions = '-preset ultrafast -tune zerolatency';
       } else if (vcodec === 'h264_vaapi') {
-        // VAAPI works best with NO extra options - let it use defaults!
-        encoderOptions = '';
+        // VAAPI - Apply quality profile settings
+        if (qualityProfile === 'speed') {
+          gopSize = 25; // 2s keyframes at 12.5fps
+          bframes = 0;
+          encoderOptions = `-compression_level 1 -quality 1`;
+        } else if (qualityProfile === 'quality') {
+          gopSize = 13; // 1s keyframes at 12.5fps
+          bframes = 2;
+          encoderOptions = `-compression_level 7 -quality 7`;
+        } else { // balanced (default)
+          gopSize = 19; // 1.5s keyframes at 12.5fps
+          bframes = 0;
+          encoderOptions = `-compression_level 4 -quality 4`;
+        }
       } else if (vcodec === 'h264_amf') {
-        // AMF minimal options
-        encoderOptions = '-usage transcoding -quality speed';
+        // AMF - Apply quality profile
+        if (qualityProfile === 'speed') {
+          gopSize = 25;
+          bframes = 0;
+          encoderOptions = '-usage transcoding -quality speed';
+        } else if (qualityProfile === 'quality') {
+          gopSize = 13;
+          bframes = 2;
+          encoderOptions = '-usage transcoding -quality quality';
+        } else { // balanced
+          gopSize = 19;
+          bframes = 0;
+          encoderOptions = '-usage transcoding -quality balanced';
+        }
       } else if (vcodec === 'h264_qsv') {
-        encoderOptions = '-preset veryfast';
+        // QuickSync - Apply quality profile
+        if (qualityProfile === 'speed') {
+          gopSize = 25;
+          bframes = 0;
+          encoderOptions = '-preset veryfast';
+        } else if (qualityProfile === 'quality') {
+          gopSize = 13;
+          bframes = 2;
+          encoderOptions = '-preset slow';
+        } else { // balanced
+          gopSize = 19;
+          bframes = 0;
+          encoderOptions = '-preset medium';
+        }
       } else if (vcodec.includes('nvenc')) {
-        encoderOptions = '-preset p1 -tune ll';
+        // NVENC - Apply quality profile
+        if (qualityProfile === 'speed') {
+          gopSize = 25;
+          bframes = 0;
+          encoderOptions = '-preset p1 -tune ll';
+        } else if (qualityProfile === 'quality') {
+          gopSize = 13;
+          bframes = 2;
+          encoderOptions = '-preset p7 -tune hq';
+        } else { // balanced
+          gopSize = 19;
+          bframes = 0;
+          encoderOptions = '-preset p4 -tune ll';
+        }
       } else {
         // For any other codec, don't add encoder options
         encoderOptions = '';
@@ -414,6 +469,8 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     const isHardwareEncoder = encoder !== 'software';
     const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software
     const colorRange = isHardwareEncoder ? ' -color_range mpeg' : ''; // Only for hardware encoders
+    const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // GOP size from quality profile
+    const bframeParams = isHardwareEncoder && bframes > 0 ? ` -bf ${bframes}` : ''; // B-frames for quality profile
     
     ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'
       } -codec:v ${vcodec
@@ -421,6 +478,8 @@ export class StreamingDelegate implements CameraStreamingDelegate {
       }${colorRange
       }${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''
       }${encoderOptions ? ` ${encoderOptions}` : ''
+      }${bframeParams
+      }${gopParams
       }${bitrate > 0 ? ` -b:v ${bitrate}k` : ''
       } -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
 

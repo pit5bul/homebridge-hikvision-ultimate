@@ -1,6 +1,6 @@
 {
   "name": "homebridge-hikvision-ultimate",
-  "version": "1.5.3",
+  "version": "1.5.5",
   "description": "Homebridge plugin for Hikvision NVR cameras with ISAPI discovery, motion detection, and FFmpeg streaming",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,8 +21,8 @@
     "motion-detection",
     "homekit"
   ],
-  "author": "pit5bul",
-  "license": "personal‑use, non‑commercial license",
+  "author": "Peter Popa",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pit5bul/homebridge-hikvision-ultimate.git"

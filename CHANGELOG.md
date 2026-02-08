@@ -5,6 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2026-02-05
+
+### 🔒 Security Update
+
+Updated indirect dependency `tar` from 7.5.6 to 7.5.7 to address security vulnerability reported by Dependabot.
+
+### Changed
+- Updated `tar` dependency to v7.5.7 (security patch)
+- Regenerated package-lock.json with latest secure dependencies
+- Verified 0 vulnerabilities with `npm audit`
+
+### Notes
+- No code changes
+- No configuration changes  
+- Drop-in replacement for v1.5.4
+- Recommended for all users
+
+## [1.5.4] - 2026-02-05
+
+### 🔧 Fixed - Config Schema & Quality Profiles Restored
+
+Fixed config.schema.json validation errors and restored quality profile functionality for hardware encoders.
+
+### Fixed
+- **Config Schema Validation**: Fixed `required` field validation errors
+  - Removed invalid `"required": true/false` from individual properties
+  - Added proper `"required": ["host", "username", "password"]` array at object level
+  - Added `"required": ["channelId", "name"]` for camera items
+  - Config now passes NPM schema validation
+  
+- **Quality Profiles Restored**: Re-added quality profile system for hardware encoders
+  - **Speed**: Fast encoding, larger GOP (25 frames), no B-frames
+  - **Balanced**: Recommended default, medium GOP (19 frames), no B-frames
+  - **Quality**: Best quality, smaller GOP (13 frames), with B-frames
+  - Applies to VAAPI, NVENC, QuickSync, and AMF encoders
+  - Automatically sets compression levels and GOP sizes
+  - Software encoding unaffected (uses preset/tune only)
+
+### Added
+- `qualityProfile` field in config.schema.json with conditional visibility
+- Quality profile logic in delegate.ts for all hardware encoders
+- GOP size (`-g`) and B-frames (`-bf`) parameters in FFmpeg commands
+- TypeScript type `QualityProfile` for type safety
+
+### Technical Details
+
+**Quality Profile Settings**:
+
+| Profile | GOP Size | B-frames | VAAPI Options | Performance |
+|---------|----------|----------|---------------|-------------|
+| Speed | 25 | 0 | `-compression_level 1 -quality 1` | ~40 fps |
+| Balanced | 19 | 0 | `-compression_level 4 -quality 4` | ~35 fps |
+| Quality | 13 | 2 | `-compression_level 7 -quality 7` | ~30 fps |
+
+**Config Example**:
+```json
+{
+  "encoder": "vaapi",
+  "qualityProfile": "balanced"  // Now working!
+}
+```
+
+### Compatibility
+- ✅ Fully backward compatible
+- ✅ Existing configs work without changes
+- ✅ Default "balanced" profile applied if not specified
+- ✅ No breaking changes
+
+### Who Should Update
+- **Critical** if you tried to publish v1.5.3 and got schema validation errors
+- **Required** if using hardware encoding and want quality profile options back in UI
+- **Recommended** for everyone for properly validated config
+
 ## [1.5.3] - 2026-02-05
 
 ### 🐛 Critical Fix - Software Encoding Video Output

@@ -6,6 +6,7 @@
   "footerDisplay": "For help and documentation, visit the [GitHub repository](https://github.com/pit5bul/homebridge-hikvision-ultimate).",
   "schema": {
     "type": "object",
+    "required": ["host", "username", "password"],
     "properties": {
       "name": {
         "title": "Platform Name",
@@ -16,7 +17,6 @@
       "host": {
         "title": "NVR IP Address / Hostname",
         "type": "string",
-        "required": true,
         "format": "hostname",
         "placeholder": "192.168.1.100",
         "description": "The IP address or hostname of your Hikvision NVR."
@@ -38,14 +38,12 @@
       "username": {
         "title": "Username",
         "type": "string",
-        "required": true,
         "placeholder": "admin",
         "description": "The username for your NVR."
       },
       "password": {
         "title": "Password",
         "type": "string",
-        "required": true,
         "description": "The password for your NVR."
       },
       "forceDiscovery": {
@@ -102,18 +100,17 @@
         "items": {
           "title": "Camera",
           "type": "object",
+          "required": ["channelId", "name"],
           "properties": {
             "channelId": {
               "title": "Channel ID",
               "type": "integer",
-              "required": true,
               "minimum": 1,
               "description": "The NVR channel number for this camera."
             },
             "name": {
               "title": "Camera Name",
               "type": "string",
-              "required": true,
               "description": "Display name for this camera in HomeKit."
             },
             "manufacturer": {
@@ -240,6 +237,20 @@
                     { "title": "Raspberry Pi V4L2 - RPi 4+", "enum": ["v4l2"] }
                   ],
                   "description": "Hardware encoder type. Reduces CPU usage by 70-90%. The plugin automatically: (1) detects if input is H.264/H.265 for hardware decode, (2) configures proper filters (scale_vaapi, hwupload, etc.), (3) sets optimal encoder options. For VAAPI with H.264/H.265 input: full GPU pipeline (decode→scale→encode). For other codecs: CPU decode, GPU scale+encode. IMPORTANT: You must set a custom FFmpeg path in Global Advanced settings - the bundled FFmpeg does not include hardware support."
+                },
+                "qualityProfile": {
+                  "title": "Quality Profile (Hardware Encoders Only)",
+                  "type": "string",
+                  "default": "balanced",
+                  "oneOf": [
+                    { "title": "Speed - Fastest encode, lower quality (no B-frames, larger GOP)", "enum": ["speed"] },
+                    { "title": "Balanced - Good balance (no B-frames, medium GOP) [Recommended]", "enum": ["balanced"] },
+                    { "title": "Quality - Best quality, slower encode (B-frames, smaller GOP)", "enum": ["quality"] }
+                  ],
+                  "description": "Quality vs performance tradeoff for hardware encoders. Ignored for software encoding. Speed: Fastest (GOP=25, no B-frames, ~40 fps). Balanced: Recommended (GOP=19, no B-frames, ~35 fps). Quality: Best quality (GOP=13, B-frames, ~30 fps). GOP = Group of Pictures (keyframe interval).",
+                  "condition": {
+                    "functionBody": "return model.videoConfig && model.videoConfig.encoder && model.videoConfig.encoder !== 'software';"
+                  }
                 },
                 "hwaccelDevice": {
                   "title": "Hardware Device Path (Advanced)",
