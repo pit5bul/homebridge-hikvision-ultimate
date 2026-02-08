@@ -55,23 +55,4 @@ npm list tar
 - **v1.5.1** - Fixed motion detection XML parsing
 - **v1.5.0** - Added VAAPI hardware acceleration
 
-## Should I Update?
 
-| Scenario | Priority | Reason |
-|----------|----------|--------|
-| Publishing to NPM | **High** | Secure dependencies required |
-| Security-conscious users | **Medium** | Good practice |
-| Production environments | **Medium** | Security compliance |
-| Everything working fine | **Low** | Update when convenient |
-
-## Files
-
-- `homebridge-hikvision-ultimate-1.5.5.tgz` (35 KB) - NPM package
-- `homebridge-hikvision-ultimate-v1.5.5-github.zip` (100 KB) - GitHub source
-
----
-
-**Release Date**: 2026-02-05  
-**Type**: Security Maintenance  
-**Breaking Changes**: None  
-**Config Changes**: None
