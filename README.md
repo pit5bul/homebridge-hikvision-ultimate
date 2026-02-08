@@ -312,9 +312,13 @@ Enable hardware acceleration:
 - ffprobe not bundled: Set `"probeOnStartup": false` (default)
 - Some NVR models may require different ISAPI endpoints for snapshots
 
-## 📝 Changelog
-
-### v1.5.1 (2026-02-05) - Latest
+## 📝 Changelog 1.5.5 (Latest)
+- **v1.5.5** (Current) - Security: tar 7.5.7
+- **v1.5.4** - Fixed config schema + restored quality profiles
+- **v1.5.3** - Fixed `-f rawvideo` for software encoding
+- **v1.5.2** - Fixed `-color_range mpeg` for software encoding
+  
+### v1.5.1 (2026-02-05)
 - 🐛 **Fixed**: Channel ID parsing for multiple XML tag variants (channelID, channelId, dynChannelID, inputIOPortID)
 - 🐛 **Fixed**: "Event missing channelID" errors on some NVR models
 - ✨ **Added**: Enhanced debug logging with emoji indicators and full raw XML output
