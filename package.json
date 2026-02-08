@@ -22,7 +22,7 @@
     "homekit"
   ],
   "author": "pit5bul",
-  "license": "MIT",
+  "license": "personal‑use, non‑commercial license",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pit5bul/homebridge-hikvision-ultimate.git"
