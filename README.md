@@ -368,7 +368,7 @@ Issues and pull requests welcome! Please test thoroughly before submitting.
 
 ## 📜 License
 
-MIT
+Personal‑use, Non‑Commercial license
 
 ## 🙏 Credits
 
