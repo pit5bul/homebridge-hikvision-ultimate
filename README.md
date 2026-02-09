@@ -18,6 +18,7 @@ Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion
 - ⚙️ **Auto-Config Persistence** - Discovered cameras automatically saved to config.json
 - 🧹 **Auto-Cleanup** - Orphaned accessories automatically removed
 - 🎛️ **UI-Friendly** - Full configuration via Homebridge Config UI X
+- 🚀 **Use your own compiled ffmpeg, for harware acceleration - the default ffmpeg doesnt come with hardware acceleration codecs, you need your own. 
 - 🐛 **Enhanced Debugging** - Comprehensive motion detection diagnostics
 
 ## 🚀 Quick Start
