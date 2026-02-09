@@ -140,11 +140,19 @@ With hardware acceleration:
 
 ### Setup
 
-The bundled `ffmpeg-for-homebridge` package **does not contain hardware acceleration codecs**. To enable hardware acceleration:
+**IMPORTANT:** The bundled `ffmpeg-for-homebridge` package **ONLY contains software codecs** and does NOT include hardware acceleration support. To enable hardware acceleration, you MUST install or compile a custom FFmpeg with hardware encoder support for your specific GPU.
 
 #### 1. Install FFmpeg with Hardware Support
 
-You must install or compile FFmpeg with the appropriate hardware codecs for your system (VAAPI, NVENC, QuickSync, AMF, VideoToolbox). This is system-specific and beyond the scope of this plugin.
+You must install or compile FFmpeg with the appropriate hardware codecs for your system:
+- **VAAPI** - Intel/AMD GPUs on Linux
+- **NVENC** - NVIDIA GPUs  
+- **QuickSync (QSV)** - Intel integrated graphics
+- **AMF** - AMD GPUs on Windows
+- **VideoToolbox** - Apple Silicon and Intel Macs
+- **V4L2** - Raspberry Pi 4+
+
+This is system-specific and beyond the scope of this plugin documentation. The plugin cannot provide hardware acceleration without a properly compiled FFmpeg binary.
 
 **Verify your FFmpeg has hardware support:**
 ```bash

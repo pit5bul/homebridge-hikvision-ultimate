@@ -210,15 +210,46 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
       existingByChannelId.set(camera.channelId, camera);
     }
 
+    // Fetch NVR device info once for all cameras
+    if (!this.discovery) {
+      throw new Error('Discovery not initialized');
+    }
+    const nvrDeviceInfo = await this.discovery.getDeviceInfo();
+    this.log.debug(`NVR device info: ${JSON.stringify(nvrDeviceInfo)}`);
+
     for (const channel of discoveredChannels) {
       const existing = existingByChannelId.get(channel.id);
       if (existing) {
         this.log.debug(`Keeping existing config for channel ${channel.id}: ${existing.name}`);
+        
+        // Auto-populate camera info if not already set
+        let updated = false;
+        if (!existing.manufacturer || existing.manufacturer === 'Hikvision') {
+          existing.manufacturer = nvrDeviceInfo.model?.includes('Hikvision') ? 'Hikvision' : (nvrDeviceInfo.model || 'Hikvision');
+          updated = true;
+        }
+        if (!existing.model || existing.model === 'IP Camera') {
+          existing.model = nvrDeviceInfo.model || 'IP Camera';
+          updated = true;
+        }
+        if (!existing.serialNumber) {
+          existing.serialNumber = `${nvrDeviceInfo.serialNumber || 'Unknown'}-CH${channel.id}`;
+          updated = true;
+        }
+        if (!existing.firmwareRevision) {
+          existing.firmwareRevision = nvrDeviceInfo.firmwareVersion || 'Unknown';
+          updated = true;
+        }
+        
+        if (updated) {
+          this.log.debug(`Auto-populated camera info for ${existing.name} from NVR`);
+        }
+        
         result.push(existing);
         existingByChannelId.delete(channel.id);
       } else {
         const streamType = this.platformConfig.streamType || DEFAULT_PLATFORM_CONFIG.streamType;
-        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType);
+        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType, nvrDeviceInfo);
         this.log.info(`Discovered new camera: ${newCamera.name} (Channel ${channel.id})`);
         result.push(newCamera);
       }
@@ -232,17 +263,30 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     return result;
   }
 
-  private createCameraConfig(channelId: number, name: string, streamType: StreamType): CameraConfig {
+  private createCameraConfig(
+    channelId: number, 
+    name: string, 
+    streamType: StreamType,
+    deviceInfo?: { name?: string; model?: string; serialNumber?: string; firmwareVersion?: string },
+  ): CameraConfig {
     if (!this.discovery) throw new Error('Discovery not initialized');
 
     const source = this.discovery.buildFfmpegSource(channelId, streamType);
     const stillImageSource = this.discovery.buildFfmpegStillSource(channelId, streamType);
 
+    // Use device info from NVR if available, otherwise use defaults
+    const manufacturer = deviceInfo?.model?.includes('Hikvision') ? 'Hikvision' : (deviceInfo?.model || DEFAULT_CAMERA_CONFIG.manufacturer);
+    const model = deviceInfo?.model || DEFAULT_CAMERA_CONFIG.model;
+    const serialNumber = deviceInfo?.serialNumber ? `${deviceInfo.serialNumber}-CH${channelId}` : undefined;
+    const firmwareRevision = deviceInfo?.firmwareVersion;
+
     return {
       channelId,
       name,
-      manufacturer: DEFAULT_CAMERA_CONFIG.manufacturer,
-      model: DEFAULT_CAMERA_CONFIG.model,
+      manufacturer,
+      model,
+      serialNumber,
+      firmwareRevision,
       motion: DEFAULT_CAMERA_CONFIG.motion,
       motionTimeout: DEFAULT_CAMERA_CONFIG.motionTimeout,
       unbridge: DEFAULT_CAMERA_CONFIG.unbridge,

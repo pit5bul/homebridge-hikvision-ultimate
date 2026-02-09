@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-02-11
+
+### ✨ Added
+
+**Auto-Populate Camera Info from ISAPI** - Automatic device information
+
+Discovery now automatically fetches and populates camera information from the NVR:
+- Manufacturer (from NVR model)
+- Model (NVR model name)
+- Serial Number (NVR serial + channel ID)
+- Firmware Version (NVR firmware version)
+
+This information is automatically saved to config.json during discovery and can still be manually edited if needed.
+
+### 🎨 Changed
+
+**Improved Quality Profile & Encoder Options Documentation**
+
+- **Quality Profile description** now shows exact encoder options generated for each profile:
+  - VAAPI: Speed (-quality 1, GOP 25), Balanced (-quality 4, GOP 19), Quality (-quality 7, GOP 13 + B-frames)
+  - NVENC: Speed (-preset p1), Balanced (-preset p4), Quality (-preset p7)
+  - QuickSync: Speed (-preset veryfast), Balanced (-preset medium), Quality (-preset slow)
+  - AMF: Usage transcoding with quality flags
+  - Software: Always `-preset ultrafast -tune zerolatency`
+
+- **Encoder Options description** clarified:
+  - If EMPTY: Uses quality profile settings automatically
+  - If FILLED: Completely overrides quality profile
+  - FFmpeg command is logged for verification
+
+**README Hardware Acceleration Section Enhanced**
+
+- Added clear emphasis that bundled FFmpeg ONLY has software codecs
+- Explicitly states custom FFmpeg compilation/installation is REQUIRED for hardware acceleration
+- Improved clarity on GPU-specific requirements
+
+### 📚 Documentation
+
+- Updated README with PERSONAL-USE license
+- Added Buy Me a Coffee funding link
+- Clarified hardware acceleration requirements throughout
+
 ## [2.0.3] - 2026-02-11
 
 ### 🎨 Changed

@@ -345,7 +345,7 @@
                       ]
                     }
                   ],
-                  "description": "Optional quality/performance tuning for hardware encoders. 'None' uses encoder defaults without overriding GOP size or B-frames. Speed: Fastest (GOP=25, no B-frames, ~40 fps). Balanced: Recommended (GOP=19, no B-frames, ~35 fps). Quality: Best quality (GOP=13, B-frames, ~30 fps). Ignored for software encoding."
+                  "description": "Quality profiles automatically configure encoder-specific options when 'Custom Encoder Options' is empty. VAAPI: Speed (-quality 1, GOP 25), Balanced (-quality 4, GOP 19), Quality (-quality 7, GOP 13, B-frames). NVENC: Speed (-preset p1), Balanced (-preset p4), Quality (-preset p7). QuickSync: Speed (-preset veryfast), Balanced (-preset medium), Quality (-preset slow). AMF: Speed/Balanced/Quality (-usage transcoding with quality flags). Software (libx264): Always uses '-preset ultrafast -tune zerolatency'. Leave empty to use encoder defaults (recommended). Check Homebridge logs to see actual FFmpeg command used."
                 },
                 "hwaccelDevice": {
                   "title": "Hardware Device Path (Advanced)",
@@ -389,7 +389,7 @@
                   "title": "Custom Encoder Options (Advanced)",
                   "type": "string",
                   "placeholder": "Leave empty for automatic",
-                  "description": "Override encoder-specific options. Leave empty - the plugin automatically applies optimal settings for each encoder (e.g., '-preset ultrafast -tune zerolatency' for software, '-compression_level 1 -quality 4' for VAAPI). Only override if you know what you're doing."
+                  "description": "Manual override for encoder options. If EMPTY, the plugin uses 'Quality Profile' settings automatically. If FILLED, this completely overrides the quality profile. Examples: VAAPI '-quality 1 -g 30 -bf 0', NVENC '-preset p4 -tune ll', Software '-preset ultrafast -tune zerolatency'. The actual FFmpeg command is logged in Homebridge logs for verification. Only use if you need specific tuning beyond quality profiles."
                 },
                 "packetSize": {
                   "title": "Packet Size",
