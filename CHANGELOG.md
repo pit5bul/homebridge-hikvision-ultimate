@@ -5,19 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.4] - 2026-02-11
+## [2.0.5] - 2026-02-11
 
 ### ✨ Added
 
-**Auto-Populate Camera Info from ISAPI** - Automatic device information
+**Auto-Populate Camera Info from ISAPI** - Correct implementation using camera-specific data
 
-Discovery now automatically fetches and populates camera information from the NVR:
-- Manufacturer (from NVR model)
-- Model (NVR model name)
-- Serial Number (NVR serial + channel ID)
-- Firmware Version (NVR firmware version)
+Discovery now properly fetches **individual camera** information from ISAPI's `sourceInputPortDescriptor` field:
+- Manufacturer (camera manufacturer, e.g., "Hikvision")
+- Model (actual camera model, e.g., "DS-2CD2385G1-I")
+- Serial Number (camera's unique serial number)
+- Firmware Version (camera firmware version)
 
-This information is automatically saved to config.json during discovery and can still be manually edited if needed.
+Implementation extracts data from `/ISAPI/ContentMgmt/InputProxy/channels` response where each channel includes `sourceInputPortDescriptor` with camera device info. This is automatically saved to config.json during discovery and can still be manually edited if needed.
+
+**Credit:** Implementation based on `homebridge-hikvision-local` plugin's approach to extracting camera info from `channel.sourceInputPortDescriptor`.
 
 ### 🎨 Changed
 
@@ -46,6 +48,10 @@ This information is automatically saved to config.json during discovery and can 
 - Updated README with PERSONAL-USE license
 - Added Buy Me a Coffee funding link
 - Clarified hardware acceleration requirements throughout
+
+## [2.0.4] - 2026-02-11
+
+**Note:** This version was published but incorrectly fetched NVR device info instead of camera-specific info. Superseded by v2.0.5 with correct implementation.
 
 ## [2.0.3] - 2026-02-11
 

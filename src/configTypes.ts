@@ -148,6 +148,12 @@ export interface DiscoveredChannel {
   inputPort: number;
   enabled: boolean;
   resolutions?: string[];
+  deviceInfo?: {
+    manufacturer?: string;
+    model?: string;
+    serialNumber?: string;
+    firmwareVersion?: string;
+  };
 }
 
 /**

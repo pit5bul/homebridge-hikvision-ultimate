@@ -38,6 +38,21 @@ class HikvisionDiscovery {
         }
     }
     /**
+     * Get camera device info from channel
+     */
+    getCameraDeviceInfo(channel) {
+        const descriptor = channel.sourceInputPortDescriptor;
+        if (!descriptor) {
+            return {};
+        }
+        return {
+            manufacturer: descriptor.manufacturer || 'Hikvision',
+            model: descriptor.model,
+            serialNumber: descriptor.serialNumber,
+            firmwareVersion: descriptor.firmwareVersion,
+        };
+    }
+    /**
      * Discover all input channels from NVR
      */
     async discoverChannels() {
@@ -50,12 +65,16 @@ class HikvisionDiscovery {
             }
             // Handle single channel or array of channels
             const channels = Array.isArray(channelList) ? channelList : [channelList];
-            return channels.map((ch) => ({
-                id: parseInt(ch.id, 10),
-                name: ch.name || `Channel ${ch.id}`,
-                inputPort: parseInt(ch.inputPort, 10),
-                enabled: true, // Assume enabled if returned
-            }));
+            return channels.map((ch) => {
+                const deviceInfo = this.getCameraDeviceInfo(ch);
+                return {
+                    id: parseInt(ch.id, 10),
+                    name: ch.name || `Channel ${ch.id}`,
+                    inputPort: parseInt(ch.inputPort, 10),
+                    enabled: true, // Assume enabled if returned
+                    deviceInfo: Object.keys(deviceInfo).length > 0 ? deviceInfo : undefined,
+                };
+            });
         }
         catch (err) {
             this.log.error(`Failed to discover channels: ${err}`);

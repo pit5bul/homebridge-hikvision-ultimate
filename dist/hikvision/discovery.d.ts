@@ -1,6 +1,19 @@
 import { Logger } from 'homebridge';
 import { HikvisionApi } from './api';
 import { DiscoveredChannel, StreamType } from '../configTypes';
+interface InputProxyChannel {
+    id: string;
+    name: string;
+    inputPort: string;
+    sourceInputPortDescriptor?: {
+        proxyProtocol?: string;
+        model?: string;
+        serialNumber?: string;
+        manufacturer?: string;
+        firmwareVersion?: string;
+        macAddress?: string;
+    };
+}
 /**
  * Discover cameras from Hikvision NVR via ISAPI
  */
@@ -20,6 +33,15 @@ export declare class HikvisionDiscovery {
         serialNumber?: string;
         firmwareVersion?: string;
     }>;
+    /**
+     * Get camera device info from channel
+     */
+    getCameraDeviceInfo(channel: InputProxyChannel): {
+        manufacturer?: string;
+        model?: string;
+        serialNumber?: string;
+        firmwareVersion?: string;
+    };
     /**
      * Discover all input channels from NVR
      */
@@ -41,3 +63,4 @@ export declare class HikvisionDiscovery {
      */
     buildFfmpegStillSource(channelId: number, streamType?: StreamType): string;
 }
+export {};
