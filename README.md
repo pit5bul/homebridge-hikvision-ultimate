@@ -437,4 +437,4 @@ npm run lint
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+PERSONAL‑USE LICENSE AGREEMENT - see [LICENSE](LICENSE) file for details
