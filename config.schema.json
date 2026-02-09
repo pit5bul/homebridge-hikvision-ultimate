@@ -6,7 +6,11 @@
   "footerDisplay": "For help and documentation, visit the [GitHub repository](https://github.com/pit5bul/homebridge-hikvision-ultimate).",
   "schema": {
     "type": "object",
-    "required": ["host", "username", "password"],
+    "required": [
+      "host",
+      "username",
+      "password"
+    ],
     "properties": {
       "name": {
         "title": "Platform Name",
@@ -57,9 +61,24 @@
         "type": "string",
         "default": "mainstream",
         "oneOf": [
-          { "title": "Mainstream (High Quality)", "enum": ["mainstream"] },
-          { "title": "Substream (Lower Quality)", "enum": ["substream"] },
-          { "title": "Third Stream", "enum": ["thirdstream"] }
+          {
+            "title": "Mainstream (High Quality)",
+            "enum": [
+              "mainstream"
+            ]
+          },
+          {
+            "title": "Substream (Lower Quality)",
+            "enum": [
+              "substream"
+            ]
+          },
+          {
+            "title": "Third Stream",
+            "enum": [
+              "thirdstream"
+            ]
+          }
         ],
         "description": "The default stream type to use for cameras. Substream may reduce CPU usage if already H.264."
       },
@@ -100,7 +119,10 @@
         "items": {
           "title": "Camera",
           "type": "object",
-          "required": ["channelId", "name"],
+          "required": [
+            "channelId",
+            "name"
+          ],
           "properties": {
             "channelId": {
               "title": "Channel ID",
@@ -139,10 +161,30 @@
               "title": "Stream Type",
               "type": "string",
               "oneOf": [
-                { "title": "Use Global Default", "enum": [""] },
-                { "title": "Mainstream (High Quality)", "enum": ["mainstream"] },
-                { "title": "Substream (Lower Quality)", "enum": ["substream"] },
-                { "title": "Third Stream", "enum": ["thirdstream"] }
+                {
+                  "title": "Use Global Default",
+                  "enum": [
+                    ""
+                  ]
+                },
+                {
+                  "title": "Mainstream (High Quality)",
+                  "enum": [
+                    "mainstream"
+                  ]
+                },
+                {
+                  "title": "Substream (Lower Quality)",
+                  "enum": [
+                    "substream"
+                  ]
+                },
+                {
+                  "title": "Third Stream",
+                  "enum": [
+                    "thirdstream"
+                  ]
+                }
               ],
               "description": "Override the global stream type for this camera."
             },
@@ -228,29 +270,82 @@
                   "type": "string",
                   "default": "software",
                   "oneOf": [
-                    { "title": "Software (libx264) - CPU encoding, works everywhere", "enum": ["software"] },
-                    { "title": "VAAPI - Intel/AMD GPU on Linux (requires custom FFmpeg with VAAPI)", "enum": ["vaapi"] },
-                    { "title": "NVIDIA NVENC - NVIDIA GPU (requires custom FFmpeg with NVENC)", "enum": ["nvenc"] },
-                    { "title": "Intel QuickSync - Intel CPU with iGPU (requires custom FFmpeg with QSV)", "enum": ["quicksync"] },
-                    { "title": "AMD AMF - AMD GPU (requires custom FFmpeg with AMF)", "enum": ["amf"] },
-                    { "title": "Apple VideoToolbox - Mac only", "enum": ["videotoolbox"] },
-                    { "title": "Raspberry Pi V4L2 - RPi 4+", "enum": ["v4l2"] }
+                    {
+                      "title": "Software (libx264) - CPU encoding, works everywhere",
+                      "enum": [
+                        "software"
+                      ]
+                    },
+                    {
+                      "title": "VAAPI - Intel/AMD GPU on Linux (requires custom FFmpeg with VAAPI)",
+                      "enum": [
+                        "vaapi"
+                      ]
+                    },
+                    {
+                      "title": "NVIDIA NVENC - NVIDIA GPU (requires custom FFmpeg with NVENC)",
+                      "enum": [
+                        "nvenc"
+                      ]
+                    },
+                    {
+                      "title": "Intel QuickSync - Intel CPU with iGPU (requires custom FFmpeg with QSV)",
+                      "enum": [
+                        "quicksync"
+                      ]
+                    },
+                    {
+                      "title": "AMD AMF - AMD GPU (requires custom FFmpeg with AMF)",
+                      "enum": [
+                        "amf"
+                      ]
+                    },
+                    {
+                      "title": "Apple VideoToolbox - Mac only",
+                      "enum": [
+                        "videotoolbox"
+                      ]
+                    },
+                    {
+                      "title": "Raspberry Pi V4L2 - RPi 4+",
+                      "enum": [
+                        "v4l2"
+                      ]
+                    }
                   ],
-                  "description": "Hardware encoder type. Reduces CPU usage by 70-90%. The plugin automatically: (1) detects if input is H.264/H.265 for hardware decode, (2) configures proper filters (scale_vaapi, hwupload, etc.), (3) sets optimal encoder options. For VAAPI with H.264/H.265 input: full GPU pipeline (decode→scale→encode). For other codecs: CPU decode, GPU scale+encode. IMPORTANT: You must set a custom FFmpeg path in Global Advanced settings - the bundled FFmpeg does not include hardware support."
+                  "description": "Hardware encoder type. Reduces CPU usage by 70-90%. The plugin automatically: (1) detects if input is H.264/H.265 for hardware decode, (2) configures proper filters (scale_vaapi, hwupload, etc.), (3) sets optimal encoder options. For VAAPI with H.264/H.265 input: full GPU pipeline (decode\u2192scale\u2192encode). For other codecs: CPU decode, GPU scale+encode. IMPORTANT: You must set a custom FFmpeg path in Global Advanced settings - the bundled FFmpeg does not include hardware support."
                 },
                 "qualityProfile": {
                   "title": "Quality Profile (Hardware Encoders Only)",
                   "type": "string",
-                  "default": "balanced",
+                  "default": "",
                   "oneOf": [
-                    { "title": "Speed - Fastest encode, lower quality (no B-frames, larger GOP)", "enum": ["speed"] },
-                    { "title": "Balanced - Good balance (no B-frames, medium GOP) [Recommended]", "enum": ["balanced"] },
-                    { "title": "Quality - Best quality, slower encode (B-frames, smaller GOP)", "enum": ["quality"] }
+                    {
+                      "title": "None - Use encoder defaults (no GOP/B-frame override)",
+                      "enum": [
+                        ""
+                      ]
+                    },
+                    {
+                      "title": "Speed - Fastest encode, lower quality (no B-frames, larger GOP)",
+                      "enum": [
+                        "speed"
+                      ]
+                    },
+                    {
+                      "title": "Balanced - Good balance (no B-frames, medium GOP) [Recommended]",
+                      "enum": [
+                        "balanced"
+                      ]
+                    },
+                    {
+                      "title": "Quality - Best quality, slower encode (B-frames, smaller GOP)",
+                      "enum": [
+                        "quality"
+                      ]
+                    }
                   ],
-                  "description": "Quality vs performance tradeoff for hardware encoders. Ignored for software encoding. Speed: Fastest (GOP=25, no B-frames, ~40 fps). Balanced: Recommended (GOP=19, no B-frames, ~35 fps). Quality: Best quality (GOP=13, B-frames, ~30 fps). GOP = Group of Pictures (keyframe interval).",
-                  "condition": {
-                    "functionBody": "return model.videoConfig && model.videoConfig.encoder && model.videoConfig.encoder !== 'software';"
-                  }
+                  "description": "Optional quality/performance tuning for hardware encoders. 'None' uses encoder defaults without overriding GOP size or B-frames. Speed: Fastest (GOP=25, no B-frames, ~40 fps). Balanced: Recommended (GOP=19, no B-frames, ~35 fps). Quality: Best quality (GOP=13, B-frames, ~30 fps). Ignored for software encoding."
                 },
                 "hwaccelDevice": {
                   "title": "Hardware Device Path (Advanced)",
@@ -263,6 +358,26 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Enable audio streaming. HomeKit will automatically choose Opus or AAC-ELD codec based on device compatibility."
+                },
+                "recording": {
+                  "title": "Enable HomeKit Secure Video (HKSV)",
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable HomeKit Secure Video recording. Records video to iCloud when motion is detected. Requires: (1) iCloud storage plan (50GB for 1 camera, 200GB for up to 5 cameras), (2) HomeKit hub (HomePod, Apple TV, or iPad), (3) Motion detection enabled on camera. Cameras should be unbridged for best HKSV performance."
+                },
+                "prebuffer": {
+                  "title": "Enable Prebuffering for HKSV",
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable prebuffering to capture video seconds BEFORE motion is detected. Continuously records last 4 seconds to memory. When motion triggers, sends prebuffer + live stream to HomeKit. Recommended for best HKSV experience. Requires 'recording' to be enabled."
+                },
+                "prebufferLength": {
+                  "title": "Prebuffer Duration (milliseconds)",
+                  "type": "integer",
+                  "default": 4000,
+                  "minimum": 2000,
+                  "maximum": 8000,
+                  "description": "Prebuffer duration in milliseconds. Default 4000ms (4 seconds). Longer duration captures more pre-motion video but uses more memory. Only used if prebuffering is enabled."
                 },
                 "videoFilter": {
                   "title": "Custom Video Filter (Advanced)",
@@ -320,13 +435,41 @@
               "type": "object",
               "readOnly": true,
               "properties": {
-                "videoCodec": { "title": "Video Codec", "type": "string", "readOnly": true },
-                "videoProfile": { "title": "Video Profile", "type": "string", "readOnly": true },
-                "width": { "title": "Width", "type": "integer", "readOnly": true },
-                "height": { "title": "Height", "type": "integer", "readOnly": true },
-                "fps": { "title": "Frame Rate", "type": "number", "readOnly": true },
-                "audioCodec": { "title": "Audio Codec", "type": "string", "readOnly": true },
-                "probedAt": { "title": "Last Probed", "type": "string", "readOnly": true }
+                "videoCodec": {
+                  "title": "Video Codec",
+                  "type": "string",
+                  "readOnly": true
+                },
+                "videoProfile": {
+                  "title": "Video Profile",
+                  "type": "string",
+                  "readOnly": true
+                },
+                "width": {
+                  "title": "Width",
+                  "type": "integer",
+                  "readOnly": true
+                },
+                "height": {
+                  "title": "Height",
+                  "type": "integer",
+                  "readOnly": true
+                },
+                "fps": {
+                  "title": "Frame Rate",
+                  "type": "number",
+                  "readOnly": true
+                },
+                "audioCodec": {
+                  "title": "Audio Codec",
+                  "type": "string",
+                  "readOnly": true
+                },
+                "probedAt": {
+                  "title": "Last Probed",
+                  "type": "string",
+                  "readOnly": true
+                }
               },
               "description": "Information detected by ffprobe. Updated on discovery or when probe is run."
             }

@@ -4,15 +4,20 @@ import {
   Logger,
   PlatformAccessory,
   Service,
+  AudioRecordingCodecType,
+  AudioRecordingSamplerate,
 } from 'homebridge';
 import { CameraConfig } from '../configTypes';
 import { StreamingDelegate } from '../streaming/delegate';
+import { RecordingDelegate } from '../streaming/recordingDelegate';
 import { DEFAULT_CAMERA_CONFIG } from '../settings';
 
 export class CameraAccessory {
   private readonly hap: HAP;
+  private readonly api: API;
   private readonly motionService?: Service;
   private readonly streamingDelegate: StreamingDelegate;
+  private readonly recordingDelegate?: RecordingDelegate;
   private motionDetected = false;
   private motionTimeout?: NodeJS.Timeout;
 
@@ -24,6 +29,7 @@ export class CameraAccessory {
     private readonly log: Logger,
   ) {
     this.hap = api.hap;
+    this.api = api;
 
     const accessoryInfo = this.accessory.getService(this.hap.Service.AccessoryInformation);
     if (accessoryInfo) {
@@ -37,6 +43,19 @@ export class CameraAccessory {
     }
 
     this.streamingDelegate = new StreamingDelegate(this.hap, cameraConfig, videoProcessor, log);
+
+    // Create recording delegate if HKSV is enabled
+    if (cameraConfig.videoConfig?.recording) {
+      this.log.info(`[HKSV] Recording enabled for ${cameraConfig.name}`);
+      this.recordingDelegate = new RecordingDelegate(
+        this.log,
+        cameraConfig.name || 'Camera',
+        cameraConfig.videoConfig,
+        this.api,
+        this.hap,
+        videoProcessor,
+      );
+    }
 
     const cameraControllerOptions = {
       cameraStreamCount: cameraConfig.videoConfig?.maxStreams || 2,
@@ -57,6 +76,57 @@ export class CameraAccessory {
           twoWayAudio: false,
           codecs: [{ type: this.hap.AudioStreamingCodecType.AAC_ELD, samplerate: this.hap.AudioStreamingSamplerate.KHZ_16 }],
         } : undefined,
+      },
+      // Add HKSV recording configuration if enabled
+      recording: !this.recordingDelegate ? undefined : {
+        options: {
+          prebufferLength: cameraConfig.videoConfig?.prebufferLength || 4000,
+          overrideEventTriggerOptions: [
+            this.hap.EventTriggerOption.MOTION,
+            this.hap.EventTriggerOption.DOORBELL,
+          ],
+          mediaContainerConfiguration: [{
+            type: 0,
+            fragmentLength: 4000,
+          }],
+          video: {
+            type: this.hap.VideoCodecType.H264,
+            parameters: {
+              levels: [
+                this.hap.H264Level.LEVEL3_1,
+                this.hap.H264Level.LEVEL3_2,
+                this.hap.H264Level.LEVEL4_0,
+              ],
+              profiles: [
+                this.hap.H264Profile.BASELINE,
+                this.hap.H264Profile.MAIN,
+                this.hap.H264Profile.HIGH,
+              ],
+            },
+            resolutions: [
+              [320, 180, 30],
+              [320, 240, 15],
+              [320, 240, 30],
+              [480, 270, 30],
+              [480, 360, 30],
+              [640, 360, 30],
+              [640, 480, 30],
+              [1280, 720, 30],
+              [1280, 960, 30],
+              [1920, 1080, 30],
+              [1600, 1200, 30],
+            ] as [number, number, number][],
+          },
+          audio: {
+            codecs: [{
+              type: AudioRecordingCodecType.AAC_LC,
+              bitrateMode: 0,
+              samplerate: [AudioRecordingSamplerate.KHZ_32],
+              audioChannels: 1,
+            }],
+          },
+        },
+        delegate: this.recordingDelegate,
       },
     };
 

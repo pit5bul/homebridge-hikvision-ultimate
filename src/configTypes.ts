@@ -73,7 +73,7 @@ export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' |
 /**
  * Quality profile for hardware encoders
  */
-export type QualityProfile = 'speed' | 'balanced' | 'quality';
+export type QualityProfile = '' | 'speed' | 'balanced' | 'quality';
 
 /**
  * Video configuration for a camera
@@ -116,6 +116,11 @@ export interface VideoConfig {
   // Debug
   debug?: boolean;
   debugReturn?: boolean;
+
+  // HomeKit Secure Video (HKSV)
+  recording?: boolean;          // Enable HKSV recording
+  prebuffer?: boolean;          // Enable prebuffering for HKSV
+  prebufferLength?: number;     // Prebuffer duration in milliseconds (default: 4000)
 }
 
 /**

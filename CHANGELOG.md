@@ -5,6 +5,128 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2025-02-09
+
+### 🔧 Fixed
+
+**Config UI X Compatibility** - Fixed for older versions (v5.16.0 and below)
+
+Removed `condition: { functionBody }` syntax from config.schema.json which was not supported by older Config UI X versions, causing fields to not appear in the UI.
+
+**Changes**:
+- Removed conditional field rendering for `qualityProfile`, `prebuffer`, and `prebufferLength`
+- All fields now always visible in UI (simplified user experience)
+- Fields still function correctly - unused fields are simply ignored by the code
+
+**Impact**:
+- ✅ Quality Profile now visible with all encoders (still only applies to hardware encoders)
+- ✅ HKSV recording options now visible in UI
+- ✅ Prebuffer options now visible when HKSV enabled
+- ✅ Works with Config UI X v5.16.0 and older versions
+
+**Migration from v2.0.0**:
+- No config changes needed
+- Just update and restart
+- UI will now show all options
+
+---
+
+## [2.0.0] - 2025-02-09
+
+### 🎉 Major Features
+
+#### HomeKit Secure Video (HKSV) Support
+
+Record camera video to iCloud on motion events with optional prebuffering.
+
+**New Config Options**:
+- `recording`: Enable HKSV recording (default: false)
+- `prebuffer`: Enable prebuffering for pre-motion capture (default: false)
+- `prebufferLength`: Prebuffer duration in milliseconds (default: 4000)
+
+**Requirements**:
+- iCloud storage plan (50GB for 1 camera, 200GB for up to 5 cameras)
+- HomeKit hub (HomePod, Apple TV, or iPad)
+- Motion detection enabled on camera
+- Unbridged cameras recommended for best performance
+
+**How it works**:
+1. Motion detected by camera
+2. Recording starts (with prebuffer if enabled)
+3. Video uploaded to iCloud via HomeKit hub
+4. Recordings appear in Home app timeline
+
+**What's recorded**:
+- Video: H.264 baseline profile, level 3.1
+- Audio: AAC (if enabled)
+- Duration: Determined by HomeKit (typically 1-10 minutes)
+
+#### Optional Quality Profiles for Hardware Encoders
+
+**BREAKING CHANGE**: Quality profiles are now opt-in instead of always applied.
+
+**New Behavior**:
+- **Default: "None"** - Use encoder defaults (no GOP/B-frames override)
+- **Speed**: Fast encoding, GOP=25, no B-frames
+- **Balanced**: Medium settings, GOP=19, no B-frames
+- **Quality**: Best quality, GOP=13, B-frames enabled
+
+**Migration**:
+- v1.5.4 users who relied on implicit 'balanced' profile should explicitly select it in v2.0.0
+- Most users can leave as "None" for encoder defaults
+
+**Why this change?**:
+- More flexible - users not forced into one approach
+- Better hardware compatibility - some encoders work best with defaults
+- Clearer intent - empty = use defaults, not hidden behavior
+
+### 🔧 Changed
+
+- **Author**: Updated to "pit5bul" in package.json
+- **Quality Profile Default**: Changed from "balanced" to "" (None)
+- **Quality Profile Options**: Added "None" as first option to use encoder defaults
+
+### ⚠️ Breaking Changes
+
+1. **Quality Profile Default Changed**
+   - **Before**: Hardware encoders always used 'balanced' profile
+   - **After**: Hardware encoders use their own defaults unless profile selected
+   - **Action**: Review hardware encoder configs, select profile if needed
+
+2. **Unbridged Cameras Recommended for HKSV**
+   - Not technically required, but strongly recommended
+   - Better performance and reliability
+   - Unbridge in config before upgrading if using HKSV
+
+### 🐛 Fixed
+
+- Quality profile parameters now only applied when explicitly selected
+- GOP size and B-frames no longer forced when profile is "None"
+
+### 📚 Documentation
+
+- Added HKSV implementation details
+- Added quality profile usage guide
+- Updated README with v2.0.0 features
+
+### 🔒 Security
+
+- Updated tar dependency to 7.5.7 (from v1.5.5)
+
+### 📦 Dependencies
+
+- No new dependencies (uses core Node.js modules)
+
+### 🎯 Compatibility
+
+- Homebridge: >=1.8.0
+- Node.js: >=18.0.0
+- HAP-NodeJS: Latest (with HKSV support)
+- iOS: 13.2+ (for HKSV)
+- iCloud: 50GB+ storage plan (for HKSV)
+
+---
+
 ## [1.5.5] - 2026-02-05
 
 ### 🔒 Security Update

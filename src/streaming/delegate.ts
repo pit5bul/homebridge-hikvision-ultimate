@@ -366,10 +366,11 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     const mtu = this.videoConfig.packetSize || 1316;
     let encoderOptions = this.videoConfig.encoderOptions;
     
-    // Quality profile for hardware encoders (controls GOP size and B-frames)
-    const qualityProfile = this.videoConfig.qualityProfile || 'balanced';
-    let gopSize = 0; // Will be calculated based on FPS and profile
-    let bframes = 0;
+    // Quality profile for hardware encoders - OPTIONAL
+    // Only apply if user explicitly set a profile (not empty string)
+    const qualityProfile = this.videoConfig.qualityProfile;
+    let gopSize = 0;   // 0 = don't add -g flag
+    let bframes = -1;  // -1 = don't add -bf flag
     
     // Set default encoder options based on actual vcodec being used
     // KEEP MINIMAL - many hardware encoders work best with NO options!
@@ -377,22 +378,25 @@ export class StreamingDelegate implements CameraStreamingDelegate {
       if (vcodec === 'libx264') {
         encoderOptions = '-preset ultrafast -tune zerolatency';
       } else if (vcodec === 'h264_vaapi') {
-        // VAAPI - Apply quality profile settings
+        // VAAPI - Only apply quality profile if user selected one
         if (qualityProfile === 'speed') {
-          gopSize = 25; // 2s keyframes at 12.5fps
+          gopSize = 25;
           bframes = 0;
           encoderOptions = `-compression_level 1 -quality 1`;
         } else if (qualityProfile === 'quality') {
-          gopSize = 13; // 1s keyframes at 12.5fps
+          gopSize = 13;
           bframes = 2;
           encoderOptions = `-compression_level 7 -quality 7`;
-        } else { // balanced (default)
-          gopSize = 19; // 1.5s keyframes at 12.5fps
+        } else if (qualityProfile === 'balanced') {
+          gopSize = 19;
           bframes = 0;
           encoderOptions = `-compression_level 4 -quality 4`;
+        } else {
+          // No profile selected (empty or undefined) - use VAAPI defaults
+          encoderOptions = '';
         }
       } else if (vcodec === 'h264_amf') {
-        // AMF - Apply quality profile
+        // AMF - Only apply quality profile if user selected one
         if (qualityProfile === 'speed') {
           gopSize = 25;
           bframes = 0;
@@ -401,13 +405,16 @@ export class StreamingDelegate implements CameraStreamingDelegate {
           gopSize = 13;
           bframes = 2;
           encoderOptions = '-usage transcoding -quality quality';
-        } else { // balanced
+        } else if (qualityProfile === 'balanced') {
           gopSize = 19;
           bframes = 0;
           encoderOptions = '-usage transcoding -quality balanced';
+        } else {
+          // No profile - minimal AMF options
+          encoderOptions = '-usage transcoding';
         }
       } else if (vcodec === 'h264_qsv') {
-        // QuickSync - Apply quality profile
+        // QuickSync - Only apply quality profile if user selected one
         if (qualityProfile === 'speed') {
           gopSize = 25;
           bframes = 0;
@@ -416,13 +423,16 @@ export class StreamingDelegate implements CameraStreamingDelegate {
           gopSize = 13;
           bframes = 2;
           encoderOptions = '-preset slow';
-        } else { // balanced
+        } else if (qualityProfile === 'balanced') {
           gopSize = 19;
           bframes = 0;
           encoderOptions = '-preset medium';
+        } else {
+          // No profile - minimal QuickSync
+          encoderOptions = '-preset medium';
         }
       } else if (vcodec.includes('nvenc')) {
-        // NVENC - Apply quality profile
+        // NVENC - Only apply quality profile if user selected one
         if (qualityProfile === 'speed') {
           gopSize = 25;
           bframes = 0;
@@ -431,9 +441,12 @@ export class StreamingDelegate implements CameraStreamingDelegate {
           gopSize = 13;
           bframes = 2;
           encoderOptions = '-preset p7 -tune hq';
-        } else { // balanced
+        } else if (qualityProfile === 'balanced') {
           gopSize = 19;
           bframes = 0;
+          encoderOptions = '-preset p4 -tune ll';
+        } else {
+          // No profile - minimal NVENC
           encoderOptions = '-preset p4 -tune ll';
         }
       } else {
@@ -469,8 +482,8 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     const isHardwareEncoder = encoder !== 'software';
     const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software
     const colorRange = isHardwareEncoder ? ' -color_range mpeg' : ''; // Only for hardware encoders
-    const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // GOP size from quality profile
-    const bframeParams = isHardwareEncoder && bframes > 0 ? ` -bf ${bframes}` : ''; // B-frames for quality profile
+    const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // Only add if quality profile set
+    const bframeParams = bframes >= 0 ? ` -bf ${bframes}` : ''; // Only add if quality profile set (-1 = skip)
     
     ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'
       } -codec:v ${vcodec

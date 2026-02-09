@@ -2,14 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CameraAccessory = void 0;
 const delegate_1 = require("../streaming/delegate");
+const recordingDelegate_1 = require("../streaming/recordingDelegate");
 const settings_1 = require("../settings");
 class CameraAccessory {
     accessory;
     cameraConfig;
     log;
     hap;
+    api;
     motionService;
     streamingDelegate;
+    recordingDelegate;
     motionDetected = false;
     motionTimeout;
     constructor(api, accessory, cameraConfig, videoProcessor, log) {
@@ -17,6 +20,7 @@ class CameraAccessory {
         this.cameraConfig = cameraConfig;
         this.log = log;
         this.hap = api.hap;
+        this.api = api;
         const accessoryInfo = this.accessory.getService(this.hap.Service.AccessoryInformation);
         if (accessoryInfo) {
             accessoryInfo
@@ -28,6 +32,11 @@ class CameraAccessory {
             }
         }
         this.streamingDelegate = new delegate_1.StreamingDelegate(this.hap, cameraConfig, videoProcessor, log);
+        // Create recording delegate if HKSV is enabled
+        if (cameraConfig.videoConfig?.recording) {
+            this.log.info(`[HKSV] Recording enabled for ${cameraConfig.name}`);
+            this.recordingDelegate = new recordingDelegate_1.RecordingDelegate(this.log, cameraConfig.name || 'Camera', cameraConfig.videoConfig, this.api, this.hap, videoProcessor);
+        }
         const cameraControllerOptions = {
             cameraStreamCount: cameraConfig.videoConfig?.maxStreams || 2,
             delegate: this.streamingDelegate,
@@ -47,6 +56,57 @@ class CameraAccessory {
                     twoWayAudio: false,
                     codecs: [{ type: "AAC-eld" /* this.hap.AudioStreamingCodecType.AAC_ELD */, samplerate: 16 /* this.hap.AudioStreamingSamplerate.KHZ_16 */ }],
                 } : undefined,
+            },
+            // Add HKSV recording configuration if enabled
+            recording: !this.recordingDelegate ? undefined : {
+                options: {
+                    prebufferLength: cameraConfig.videoConfig?.prebufferLength || 4000,
+                    overrideEventTriggerOptions: [
+                        1 /* this.hap.EventTriggerOption.MOTION */,
+                        2 /* this.hap.EventTriggerOption.DOORBELL */,
+                    ],
+                    mediaContainerConfiguration: [{
+                            type: 0,
+                            fragmentLength: 4000,
+                        }],
+                    video: {
+                        type: 0 /* this.hap.VideoCodecType.H264 */,
+                        parameters: {
+                            levels: [
+                                0 /* this.hap.H264Level.LEVEL3_1 */,
+                                1 /* this.hap.H264Level.LEVEL3_2 */,
+                                2 /* this.hap.H264Level.LEVEL4_0 */,
+                            ],
+                            profiles: [
+                                0 /* this.hap.H264Profile.BASELINE */,
+                                1 /* this.hap.H264Profile.MAIN */,
+                                2 /* this.hap.H264Profile.HIGH */,
+                            ],
+                        },
+                        resolutions: [
+                            [320, 180, 30],
+                            [320, 240, 15],
+                            [320, 240, 30],
+                            [480, 270, 30],
+                            [480, 360, 30],
+                            [640, 360, 30],
+                            [640, 480, 30],
+                            [1280, 720, 30],
+                            [1280, 960, 30],
+                            [1920, 1080, 30],
+                            [1600, 1200, 30],
+                        ],
+                    },
+                    audio: {
+                        codecs: [{
+                                type: 0 /* AudioRecordingCodecType.AAC_LC */,
+                                bitrateMode: 0,
+                                samplerate: [3 /* AudioRecordingSamplerate.KHZ_32 */],
+                                audioChannels: 1,
+                            }],
+                    },
+                },
+                delegate: this.recordingDelegate,
             },
         };
         const cameraController = new this.hap.CameraController(cameraControllerOptions);

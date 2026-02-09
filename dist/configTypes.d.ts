@@ -47,7 +47,7 @@ export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' |
 /**
  * Quality profile for hardware encoders
  */
-export type QualityProfile = 'speed' | 'balanced' | 'quality';
+export type QualityProfile = '' | 'speed' | 'balanced' | 'quality';
 /**
  * Video configuration for a camera
  */
@@ -74,6 +74,9 @@ export interface VideoConfig {
     packetSize?: number;
     debug?: boolean;
     debugReturn?: boolean;
+    recording?: boolean;
+    prebuffer?: boolean;
+    prebufferLength?: number;
 }
 /**
  * Detected stream information from ffprobe

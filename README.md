@@ -1,17 +1,18 @@
 # homebridge-hikvision-ultimate
 
 [![npm version](https://badge.fury.io/js/homebridge-hikvision-ultimate.svg)](https://www.npmjs.com/package/homebridge-hikvision-ultimate)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
-Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion detection, and hardware-accelerated streaming.
+Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion detection, hardware-accelerated streaming, and **HomeKit Secure Video (HKSV)** support.
 
 ## ✨ Features
 
 - 🔍 **Automatic Camera Discovery** - Zero configuration required, just add NVR credentials
-- 📹 **High Quality Streaming** - Hardware-accelerated with quality profiles (Speed/Balanced/Quality)
+- 📹 **High Quality Streaming** - Hardware-accelerated with optional quality profiles (Speed/Balanced/Quality)
 - 🎯 **Motion Detection** - Real-time motion events via ISAPI with enhanced debugging
+- 📼 **HomeKit Secure Video (HKSV)** - Record to iCloud on motion with optional prebuffering
 - 🚀 **Hardware Acceleration** - Support for 7 encoders: VAAPI, QuickSync, NVENC, AMF, VideoToolbox, Jetson, RK MPP
-- ⚡ **Quality Profiles** - One-click presets optimized for HomeKit streaming
+- ⚡ **Optional Quality Profiles** - One-click presets optimized for HomeKit streaming (or use encoder defaults)
 - 🎬 **80% CPU Reduction** - Full GPU pipeline (decode → scale → encode) with VAAPI
 - 📸 **Working Snapshots** - Fast JPEG snapshots using ISAPI endpoints
 - ⚙️ **Auto-Config Persistence** - Discovered cameras automatically saved to config.json
@@ -312,13 +313,9 @@ Enable hardware acceleration:
 - ffprobe not bundled: Set `"probeOnStartup": false` (default)
 - Some NVR models may require different ISAPI endpoints for snapshots
 
-## 📝 Changelog 1.5.5 (Latest)
-- **v1.5.5** (Current) - Security: tar 7.5.7
-- **v1.5.4** - Fixed config schema + restored quality profiles
-- **v1.5.3** - Fixed `-f rawvideo` for software encoding
-- **v1.5.2** - Fixed `-color_range mpeg` for software encoding
-  
-### v1.5.1 (2026-02-05)
+## 📝 Changelog
+
+### v1.5.1 (2026-02-05) - Latest
 - 🐛 **Fixed**: Channel ID parsing for multiple XML tag variants (channelID, channelId, dynChannelID, inputIOPortID)
 - 🐛 **Fixed**: "Event missing channelID" errors on some NVR models
 - ✨ **Added**: Enhanced debug logging with emoji indicators and full raw XML output
