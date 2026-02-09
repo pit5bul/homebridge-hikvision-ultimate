@@ -321,7 +321,7 @@
                   "default": "",
                   "oneOf": [
                     {
-                      "title": "None - Use encoder defaults (no GOP/B-frame override)",
+                      "title": "Use Encoder Defaults (Recommended)",
                       "enum": [
                         ""
                       ]
@@ -429,49 +429,6 @@
                   "description": "Show FFmpeg output in Homebridge log."
                 }
               }
-            },
-            "detected": {
-              "title": "Detected Stream Info (Read-Only)",
-              "type": "object",
-              "readOnly": true,
-              "properties": {
-                "videoCodec": {
-                  "title": "Video Codec",
-                  "type": "string",
-                  "readOnly": true
-                },
-                "videoProfile": {
-                  "title": "Video Profile",
-                  "type": "string",
-                  "readOnly": true
-                },
-                "width": {
-                  "title": "Width",
-                  "type": "integer",
-                  "readOnly": true
-                },
-                "height": {
-                  "title": "Height",
-                  "type": "integer",
-                  "readOnly": true
-                },
-                "fps": {
-                  "title": "Frame Rate",
-                  "type": "number",
-                  "readOnly": true
-                },
-                "audioCodec": {
-                  "title": "Audio Codec",
-                  "type": "string",
-                  "readOnly": true
-                },
-                "probedAt": {
-                  "title": "Last Probed",
-                  "type": "string",
-                  "readOnly": true
-                }
-              },
-              "description": "Information detected by ffprobe. Updated on discovery or when probe is run."
             }
           }
         }
@@ -495,14 +452,11 @@
     },
     {
       "type": "section",
-      "title": "Discovery Settings",
+      "title": "Discovery",
       "expandable": true,
-      "expanded": false,
+      "expanded": true,
       "items": [
-        "forceDiscovery",
-        "streamType",
-        "probeOnStartup",
-        "probeTimeout"
+        "forceDiscovery"
       ]
     },
     {
@@ -520,39 +474,29 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Basic Settings",
+              "title": "Basic",
               "expandable": true,
               "expanded": true,
               "items": [
-                "cameras[].channelId",
                 "cameras[].name",
                 "cameras[].enabled",
-                "cameras[].streamType"
+                "cameras[].videoConfig.source",
+                "cameras[].videoConfig.stillImageSource"
               ]
             },
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Video Quality",
+              "title": "Video Settings",
               "expandable": true,
               "expanded": false,
               "items": [
                 "cameras[].videoConfig.maxWidth",
                 "cameras[].videoConfig.maxHeight",
                 "cameras[].videoConfig.maxBitrate",
-                "cameras[].videoConfig.minBitrate"
-              ]
-            },
-            {
-              "key": "cameras[]",
-              "type": "section",
-              "title": "Hardware Encoding",
-              "expandable": true,
-              "expanded": false,
-              "items": [
+                "cameras[].videoConfig.minBitrate",
                 "cameras[].videoConfig.encoder",
                 "cameras[].videoConfig.qualityProfile",
-                "cameras[].videoConfig.hwaccelDevice",
                 "cameras[].videoConfig.audio"
               ]
             },
@@ -582,27 +526,22 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "Advanced Troubleshooting",
+              "title": "Advanced Video",
               "expandable": true,
               "expanded": false,
               "items": [
-                "cameras[].videoConfig.source",
-                "cameras[].videoConfig.stillImageSource",
                 "cameras[].videoConfig.encoderOptions",
                 "cameras[].videoConfig.videoFilter",
                 "cameras[].videoConfig.mapvideo",
                 "cameras[].videoConfig.mapaudio",
                 "cameras[].videoConfig.packetSize",
-                "cameras[].videoConfig.vflip",
-                "cameras[].videoConfig.hflip",
-                "cameras[].videoConfig.maxStreams",
                 "cameras[].videoConfig.debug"
               ]
             },
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "HomeKit Customization",
+              "title": "HomeKit Info",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -612,22 +551,6 @@
                 "cameras[].firmwareRevision",
                 "cameras[].unbridge"
               ]
-            },
-            {
-              "key": "cameras[]",
-              "type": "section",
-              "title": "Detected Stream Info (Read-Only)",
-              "expandable": true,
-              "expanded": false,
-              "items": [
-                "cameras[].detected.videoCodec",
-                "cameras[].detected.videoProfile",
-                "cameras[].detected.width",
-                "cameras[].detected.height",
-                "cameras[].detected.fps",
-                "cameras[].detected.audioCodec",
-                "cameras[].detected.probedAt"
-              ]
             }
           ]
         }
@@ -635,13 +558,11 @@
     },
     {
       "type": "section",
-      "title": "Global Advanced",
+      "title": "FFmpeg Configuration",
       "expandable": true,
       "expanded": false,
       "items": [
-        "videoProcessor",
-        "interfaceName",
-        "debugMotion"
+        "videoProcessor"
       ]
     }
   ]

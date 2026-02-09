@@ -1,508 +1,440 @@
 # homebridge-hikvision-ultimate
 
 [![npm version](https://badge.fury.io/js/homebridge-hikvision-ultimate.svg)](https://www.npmjs.com/package/homebridge-hikvision-ultimate)
-[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![npm downloads](https://badgen.net/npm/dt/homebridge-hikvision-ultimate)](https://www.npmjs.com/package/homebridge-hikvision-ultimate)
+[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=flat)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
-Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion detection, hardware-accelerated streaming, and **HomeKit Secure Video (HKSV)** support.
+Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion detection, and hardware-accelerated streaming.
 
-## ✨ Features
+## Features
 
-- 🔍 **Automatic Camera Discovery** - Zero configuration required, just add NVR credentials
-- 📹 **High Quality Streaming** - Hardware-accelerated with optional quality profiles (Speed/Balanced/Quality)
-- 🎯 **Motion Detection** - Real-time motion events via ISAPI with enhanced debugging
-- 📼 **HomeKit Secure Video (HKSV)** - Record to iCloud on motion with optional prebuffering
-- 🚀 **Hardware Acceleration** - Support for 7 encoders: VAAPI, QuickSync, NVENC, AMF, VideoToolbox, Jetson, RK MPP
-- ⚡ **Optional Quality Profiles** - One-click presets optimized for HomeKit streaming (or use encoder defaults)
-- 🎬 **80% CPU Reduction** - Full GPU pipeline (decode → scale → encode) with VAAPI
-- 📸 **Working Snapshots** - Fast JPEG snapshots using ISAPI endpoints
-- ⚙️ **Auto-Config Persistence** - Discovered cameras automatically saved to config.json
-- 🧹 **Auto-Cleanup** - Orphaned accessories automatically removed
-- 🎛️ **UI-Friendly** - Full configuration via Homebridge Config UI X
-- 🚀 **Use your own compiled ffmpeg, for harware acceleration - the default ffmpeg doesnt come with hardware acceleration codecs, you need your own. 
-- 🐛 **Enhanced Debugging** - Comprehensive motion detection diagnostics
+### 🔍 Automatic Discovery
+- Zero-configuration camera setup
+- Automatically detects all cameras connected to your Hikvision NVR
+- Auto-generates optimal RTSP URLs for each camera
+- Saves discovered cameras to config.json automatically
 
-## 🚀 Quick Start
+### 📹 High-Quality Streaming
+- 1080p @ 30fps streaming to HomeKit
+- Hardware acceleration support (reduces CPU usage by 75-80%)
+- Software encoding fallback for immediate operation
+- Configurable bitrate and resolution per camera
 
-### Installation
+### 🎯 Motion Detection
+- Real-time motion events via ISAPI event streams
+- Native Hikvision motion detection (no video analysis needed)
+- Configurable motion timeout
+- Triggers HomeKit motion sensor
 
+### 🚀 Hardware Acceleration
+- **VAAPI** - Intel/AMD GPUs on Linux
+- **QuickSync** - Intel integrated graphics
+- **NVENC** - NVIDIA GPUs
+- **AMF** - AMD GPUs on Windows
+- **VideoToolbox** - Apple Silicon and Intel Macs
+- **V4L2** - Raspberry Pi 4+
+
+### 📸 Fast Snapshots
+- ISAPI-based snapshots (instant response)
+- No video decoding required
+- Optimized for HomeKit responsiveness
+
+### 🎥 HomeKit Secure Video (HKSV)
+- Full recording support with iCloud storage
+- Prebuffering for instant recording start
+- Efficient vcodec copy mode
+- Activity zones and notifications
+
+### ⚙️ Easy Configuration
+- Homebridge Config UI X integration
+- Visual camera configuration
+- Live config updates without restart
+- Automatic cleanup of orphaned accessories
+
+## Installation
+
+### 1. Install Homebridge
+
+If you haven't already, install Homebridge:
 ```bash
-npm install -g homebridge-hikvision-ultimate
+sudo npm install -g --unsafe-perm homebridge
 ```
 
-Or install via Homebridge Config UI X: Search for "Hikvision Ultimate"
+Or follow the [official installation guides](https://github.com/homebridge/homebridge/wiki).
 
-### Minimal Configuration
+### 2. Install Plugin
+
+```bash
+sudo npm install -g homebridge-hikvision-ultimate
+```
+
+### 3. Configure via UI
+
+1. Open Homebridge Config UI X
+2. Navigate to Plugins → homebridge-hikvision-ultimate
+3. Click Settings
+4. Enter your NVR connection details:
+   - NVR IP address/hostname
+   - Username (admin user with camera access)
+   - Password
+5. Save and restart Homebridge
+
+The plugin will automatically discover all cameras and add them to your config.
+
+## Quick Start
+
+### Minimum Configuration
 
 ```json
 {
-    "platforms": [
-        {
-            "platform": "HikvisionUltimate",
-            "name": "Hikvision NVR",
-            "host": "192.168.1.100",
-            "username": "admin",
-            "password": "your_password"
-        }
-    ]
+  "platforms": [
+    {
+      "platform": "HikvisionUltimate",
+      "name": "Hikvision NVR",
+      "host": "192.168.1.100",
+      "username": "admin",
+      "password": "your_password"
+    }
+  ]
 }
 ```
 
-That's it! The plugin will:
-1. 🔍 Discover all cameras on your NVR
-2. 💾 Save them to config.json automatically
-3. 📹 Stream at 2000kbps with 1080p resolution
-4. 📸 Generate snapshot URLs
-5. 🎯 Enable motion detection
+### First Run
 
-## 📖 Configuration Options
+1. Add the minimum configuration
+2. Restart Homebridge
+3. Watch the logs - you'll see:
+   ```
+   [Hikvision NVR] 🔍 No cameras configured - starting auto-discovery...
+   [Hikvision NVR] ✅ Found 4 channel(s) on NVR
+   [Hikvision NVR] Discovered new camera: Front Door (Channel 1)
+   [Hikvision NVR] Discovered new camera: Backyard (Channel 2)
+   ```
+4. Cameras are automatically saved to your config.json
+5. Add cameras to HomeKit using your Homebridge PIN
+
+### Adding New Cameras
+
+If you add cameras to your NVR later:
+
+1. Go to plugin settings
+2. Enable **Force Discovery**
+3. Restart Homebridge
+4. New cameras will be discovered and added
+5. Disable Force Discovery after successful discovery
+
+## Hardware Acceleration
+
+### Why Hardware Acceleration?
+
+By default, the plugin uses software encoding which:
+- ✅ Works immediately out of the box
+- ❌ Consumes 80-100% CPU per camera stream
+- ❌ Not suitable for multiple cameras
+
+With hardware acceleration:
+- ✅ Reduces CPU usage by 75-80%
+- ✅ Supports multiple camera streams
+- ✅ Lower power consumption
+- ✅ Better system performance
+
+### Setup
+
+The bundled `ffmpeg-for-homebridge` package **does not contain hardware acceleration codecs**. To enable hardware acceleration:
+
+#### 1. Install FFmpeg with Hardware Support
+
+You must install or compile FFmpeg with the appropriate hardware codecs for your system (VAAPI, NVENC, QuickSync, AMF, VideoToolbox). This is system-specific and beyond the scope of this plugin.
+
+**Verify your FFmpeg has hardware support:**
+```bash
+# Check for VAAPI
+ffmpeg -encoders | grep vaapi
+
+# Check for NVENC
+ffmpeg -encoders | grep nvenc
+
+# Check for QuickSync
+ffmpeg -encoders | grep qsv
+```
+
+#### 2. Configure FFmpeg Path
+
+**Via Homebridge Config UI X:**
+1. Scroll to bottom → **FFmpeg Configuration** section
+2. Set **Custom FFmpeg Path**: `/usr/bin/ffmpeg` (or your FFmpeg location)
+3. Restart Homebridge
+
+**Via config.json:**
+```json
+{
+  "platform": "HikvisionUltimate",
+  "name": "Hikvision NVR",
+  "host": "192.168.1.100",
+  "username": "admin",
+  "password": "your_password",
+  "videoProcessor": "/usr/bin/ffmpeg",
+  "cameras": [...]
+}
+```
+
+#### 3. Select Hardware Encoder Per Camera
+
+1. Go to camera settings → **Video Settings**
+2. Set **Hardware Encoder** to your GPU type:
+   - `vaapi` - Intel/AMD GPUs on Linux
+   - `qsv` - Intel QuickSync
+   - `h264_nvenc` - NVIDIA GPUs
+   - `h264_videotoolbox` - Apple Silicon/Intel Macs
+   - `h264_amf` - AMD GPUs on Windows
+   - `v4l2` - Raspberry Pi 4+
+
+#### 4. Optional: Quality Profile
+
+By default, hardware encoders use their built-in defaults (recommended).
+
+You can optionally select a quality profile:
+- **Use Encoder Defaults** - Let encoder optimize (recommended)
+- **Speed** - Fastest encoding, lower quality
+- **Balanced** - Medium speed and quality
+- **Quality** - Best quality, slower encoding
+
+### Verification
+
+Check Homebridge logs:
+```
+[Hikvision NVR] Using FFmpeg: /usr/bin/ffmpeg
+[Hikvision NVR] FFmpeg version: 6.0
+[Front Door] Hardware encoder: vaapi
+```
+
+CPU usage should drop from 80-100% to 15-25% per camera stream.
+
+### Default Encoder Options
+
+**Software Encoding (libx264):**
+- Automatically uses: `-preset ultrafast -tune zerolatency`
+- Optimized for low-latency streaming
+
+**Hardware Encoding:**
+- With no quality profile: Uses encoder defaults (recommended)
+- With quality profile: Applies profile-specific GOP size and B-frame settings
+- Custom options: Can override in **Advanced Video** section
+
+## HomeKit Secure Video (HKSV)
+
+### Requirements
+
+- iCloud+ subscription with sufficient storage
+- HomeKit Home Hub (Apple TV, HomePod, or iPad)
+- iOS 13.2 or later
+
+### Setup
+
+1. Go to camera settings → **HomeKit Secure Video (HKSV)**
+2. Enable **Recording**
+3. Optional: Enable **Prebuffer** for instant recording start
+4. Set **Prebuffer Length** (default: 4000ms)
+5. Restart Homebridge
+6. In the Home app:
+   - Open camera settings
+   - Enable recording
+   - Configure activity zones and notifications
+
+### How It Works
+
+- Uses separate recording pipeline from live streaming
+- Prebuffer maintains rolling 4-second buffer
+- H.264 baseline profile for HomeKit compatibility
+- Fragmented MP4 format for efficient storage
+- Motion events trigger recording with prebuffer content
+
+## Configuration Reference
 
 ### Platform Settings
 
-| Option | Required | Default | Description |
-|--------|----------|---------|-------------|
-| `platform` | Yes | - | Must be `HikvisionUltimate` |
-| `name` | Yes | - | Display name in Homebridge |
-| `host` | Yes | - | NVR IP address or hostname |
-| `username` | Yes | - | NVR username |
-| `password` | Yes | - | NVR password |
-| `port` | No | `80` | NVR HTTP port |
-| `secure` | No | `false` | Use HTTPS |
-| `streamType` | No | `mainstream` | Default stream: `mainstream`, `substream`, or `thirdstream` |
-| `probeOnStartup` | No | `false` | Probe streams on startup (requires ffprobe) |
-| `forceDiscovery` | No | `false` | Force re-discovery on every restart |
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `name` | string | "Hikvision NVR" | Platform name in Homebridge logs |
+| `host` | string | **required** | NVR IP address or hostname |
+| `port` | number | 80 | NVR HTTP port |
+| `secure` | boolean | false | Use HTTPS for NVR connection |
+| `username` | string | **required** | NVR username (admin) |
+| `password` | string | **required** | NVR password |
+| `forceDiscovery` | boolean | false | Force re-discovery of cameras |
+| `videoProcessor` | string | (bundled) | Path to custom FFmpeg binary |
 
-### Per-Camera Settings
+### Camera Settings
 
-After first discovery, customize individual cameras in the Homebridge UI:
+#### Basic
+- `name` - Camera display name in HomeKit
+- `enabled` - Enable/disable camera
+- `source` - FFmpeg source options (auto-generated)
+- `stillImageSource` - Snapshot source (auto-generated)
+
+#### Video Settings
+- `maxWidth` - Maximum width (default: 1920)
+- `maxHeight` - Maximum height (default: 1080)
+- `maxBitrate` - Maximum bitrate in kbps (default: 2000)
+- `minBitrate` - Minimum bitrate in kbps (default: 0)
+- `encoder` - Hardware encoder type
+- `qualityProfile` - Optional quality preset
+- `audio` - Enable audio streaming (default: true)
+
+#### HKSV
+- `recording` - Enable HomeKit Secure Video
+- `prebuffer` - Enable prebuffering
+- `prebufferLength` - Prebuffer duration in ms (default: 4000)
+
+#### Motion Detection
+- `motion` - Enable motion sensor (default: true)
+- `motionTimeout` - Motion reset timeout in seconds (default: 1)
+
+#### Advanced Video
+- `encoderOptions` - Custom FFmpeg encoder options
+- `videoFilter` - Custom FFmpeg video filters
+- `mapvideo` - Video stream mapping
+- `mapaudio` - Audio stream mapping
+- `packetSize` - RTP packet size (default: 1316)
+- `debug` - Show FFmpeg output in logs
+
+#### HomeKit Info
+- `manufacturer` - Manufacturer name
+- `model` - Model name
+- `serialNumber` - Serial number
+- `firmwareRevision` - Firmware version
+- `unbridge` - Run as separate accessory
+
+## Advanced Configuration
+
+### Multiple Stream Types
+
+Hikvision cameras provide multiple streams:
+- **Mainstream** (101) - High quality, 1080p
+- **Substream** (102) - Lower quality, reduced CPU
+- **Third Stream** (103) - Lowest quality
+
+The plugin uses mainstream by default. To manually override:
 
 ```json
 {
-    "cameras": [
-        {
-            "channelId": 1,
-            "name": "Front Door",
-            "enabled": true,
-            "motion": true,
-            "motionTimeout": 30,
-            "videoConfig": {
-                "encoder": "vaapi",
-                "qualityProfile": "balanced",
-                "maxBitrate": 3000,
-                "maxWidth": 1920,
-                "maxHeight": 1080,
-                "maxFPS": 30
-            }
-        }
-    ]
-}
-```
-
-2.0.2] - 2025-02-09
-🔧 Fixed
-Config UI Layout - Added missing fields to UI layout configuration
-
-The fields were in the schema but not in the layout section, so Config UI X wasn't displaying them.
-
-Fixed:
-
-Added qualityProfile to "Hardware Encoding" tab
-Added new "HomeKit Secure Video (HKSV)" tab with recording, prebuffer, prebufferLength
-Audio Decoding When Disabled - Skip audio track in RTSP when audio is disabled
-
-When audio: false, FFmpeg was still decoding the audio stream from RTSP and generating parsing errors.
-
-Fixed:
-
-Added -allowed_media_types video to RTSP source when audio is disabled
-Eliminates "Error parsing AU headers" spam in logs
-Reduces CPU usage by not decoding unused audio
-Impact:
-
-✅ Quality Profile now visible in Hardware Encoding tab
-✅ HKSV options now visible in dedicated HKSV tab
-✅ All new v2.0.0 features now accessible in UI
-✅ Cleaner logs when audio disabled
-✅ Lower CPU usage when audio not needed
-Migration from v2.0.1:
-
-No config changes needed
-UI will now show all options in proper tabs
-Audio errors will stop appearing in logs
-[2.0.1] - 2025-02-09
-🔧 Fixed
-Config UI X Compatibility - Fixed for older versions (v5.16.0 and below)
-
-Removed condition: { functionBody } syntax from config.schema.json which was not supported by older Config UI X versions, causing fields to not appear in the UI.
-
-Changes:
-
-Removed conditional field rendering for qualityProfile, prebuffer, and prebufferLength
-All fields now always visible in UI (simplified user experience)
-Fields still function correctly - unused fields are simply ignored by the code
-Impact:
-
-✅ Quality Profile now visible with all encoders (still only applies to hardware encoders)
-✅ HKSV recording options now visible in UI
-✅ Prebuffer options now visible when HKSV enabled
-✅ Works with Config UI X v5.16.0 and older versions
-Migration from v2.0.0:
-
-No config changes needed
-Just update and restart
-UI will now show all options
-[2.0.0] - 2025-02-09
-🎉 Major Features
-HomeKit Secure Video (HKSV) Support
-Record camera video to iCloud on motion events with optional prebuffering.
-
-New Config Options:
-
-recording: Enable HKSV recording (default: false)
-prebuffer: Enable prebuffering for pre-motion capture (default: false)
-prebufferLength: Prebuffer duration in milliseconds (default: 4000)
-Requirements:
-
-iCloud storage plan (50GB for 1 camera, 200GB for up to 5 cameras)
-HomeKit hub (HomePod, Apple TV, or iPad)
-Motion detection enabled on camera
-Unbridged cameras recommended for best performance
-How it works:
-
-Motion detected by camera
-Recording starts (with prebuffer if enabled)
-Video uploaded to iCloud via HomeKit hub
-Recordings appear in Home app timeline
-What's recorded:
-
-Video: H.264 baseline profile, level 3.1
-Audio: AAC (if enabled)
-Duration: Determined by HomeKit (typically 1-10 minutes)
-Optional Quality Profiles for Hardware Encoders
-BREAKING CHANGE: Quality profiles are now opt-in instead of always applied.
-
-New Behavior:
-
-Default: "None" - Use encoder defaults (no GOP/B-frames override)
-Speed: Fast encoding, GOP=25, no B-frames
-Balanced: Medium settings, GOP=19, no B-frames
-Quality: Best quality, GOP=13, B-frames enabled
-Migration:
-
-v1.5.4 users who relied on implicit 'balanced' profile should explicitly select it in v2.0.0
-Most users can leave as "None" for encoder defaults
-Why this change?:
-
-More flexible - users not forced into one approach
-Better hardware compatibility - some encoders work best with defaults
-Clearer intent - empty = use defaults, not hidden behavior
-🔧 Changed
-Author: Updated to "pit5bul" in package.json
-Quality Profile Default: Changed from "balanced" to "" (None)
-Quality Profile Options: Added "None" as first option to use encoder defaults
-⚠️ Breaking Changes
-Quality Profile Default Changed
-
-Before: Hardware encoders always used 'balanced' profile
-After: Hardware encoders use their own defaults unless profile selected
-Action: Review hardware encoder configs, select profile if needed
-Unbridged Cameras Recommended for HKSV
-
-Not technically required, but strongly recommended
-Better performance and reliability
-Unbridge in config before upgrading if using HKSV
-🐛 Fixed
-Quality profile parameters now only applied when explicitly selected
-GOP size and B-frames no longer forced when profile is "None"
-📚 Documentation
-Added HKSV implementation details
-Added quality profile usage guide
-Updated README with v2.0.0 features
-🔒 Security
-Updated tar dependency to 7.5.7 (from v1.5.5)
-📦 Dependencies
-No new dependencies (uses core Node.js modules)
-🎯 Compatibility
-Homebridge: >=1.8.0
-Node.js: >=18.0.0
-HAP-NodeJS: Latest (with HKSV support)
-iOS: 13.2+ (for HKSV)
-iCloud: 50GB+ storage plan (for HKSV)
-
-### Quality Profiles (v1.5.0+)
-
-Select encoding quality presets optimized for HomeKit streaming:
-
-| Profile | Use Case | B-Frames | GOP Size | Performance |
-|---------|----------|----------|----------|-------------|
-| `speed` | Live viewing, multiple streams | 0 | 2s keyframes | ~40% GPU |
-| `balanced` | General use (recommended) | 0-1 | 1.5s keyframes | ~35% GPU |
-| `quality` | Recording, single stream | 2 | 1s keyframes | ~30% GPU |
-
-**Example**:
-```json
-{
+  "cameras": [{
+    "channelId": 1,
+    "name": "Front Door",
     "videoConfig": {
-        "encoder": "vaapi",
-        "qualityProfile": "balanced"
+      "source": "-rtsp_transport tcp -i rtsp://admin:pass@192.168.1.100/Streaming/Channels/102"
     }
+  }]
 }
 ```
 
-### Hardware Acceleration
+### Custom Encoder Options
 
-Reduce CPU usage by 70-90% with hardware encoding:
+Override encoder settings for specific use cases:
 
-| Encoder | Platform | Hardware | Quality Profiles |
-|---------|----------|----------|------------------|
-| `software` | All | CPU only (default) | No |
-| `vaapi` | Linux | Intel/AMD GPU | ✅ Yes |
-| `quicksync` | All | Intel CPU with iGPU | ✅ Yes |
-| `nvenc` | All | NVIDIA GPU | ✅ Yes |
-| `amf` | Windows | AMD GPU | ✅ Yes |
-| `videotoolbox` | macOS | Apple Silicon / Intel Mac | ✅ Yes |
-| `jetson` | Linux | NVIDIA Jetson | ✅ Yes |
-| `rkmpp` | Linux | Rockchip SoC | ✅ Yes |
-| `v4l2` | Linux | Raspberry Pi | No |
-
-**VAAPI Example (80% CPU reduction)**:
 ```json
 {
+  "cameras": [{
     "videoConfig": {
-        "encoder": "vaapi",
-        "qualityProfile": "balanced"
+      "encoder": "vaapi",
+      "encoderOptions": "-quality 1 -g 30 -bf 0"
     }
+  }]
 }
 ```
 
-**Performance** (VAAPI on AMD GPU):
-- Speed profile: 5% CPU, 40% GPU, 12.5 FPS
-- Balanced profile: 7% CPU, 35% GPU, 12.5 FPS
-- Quality profile: 10% CPU, 30% GPU, 10-12 FPS
+### Multi-GPU Systems
 
-## 🎯 How It Works
+If you have multiple GPUs, specify which to use (advanced users can add this to config.json manually):
 
-### First Run (Zero Config)
-```
-1. Plugin connects to NVR
-2. Discovers all cameras via ISAPI
-3. Generates RTSP URLs automatically
-4. Saves cameras to config.json
-5. Registers cameras in HomeKit
-```
-
-### Subsequent Runs
-```
-1. Loads cameras from config.json
-2. Cleans up orphaned accessories
-3. Restores cached cameras
-4. Starts motion detection
-5. Ready for streaming
-```
-
-## 📸 Stream Configuration
-
-### Quality Presets
-
-**Low (Mobile/Remote)**
 ```json
 {
-    "maxBitrate": 1000,
-    "maxWidth": 1280,
-    "maxHeight": 720,
-    "maxFPS": 15
+  "cameras": [{
+    "videoConfig": {
+      "encoder": "vaapi",
+      "hwaccelDevice": "/dev/dri/renderD129"
+    }
+  }]
 }
 ```
 
-**Medium (Balanced)**
-```json
-{
-    "maxBitrate": 2000,
-    "maxWidth": 1920,
-    "maxHeight": 1080,
-    "maxFPS": 20
-}
-```
+## Troubleshooting
 
-**High (Local Network)**
-```json
-{
-    "maxBitrate": 4000,
-    "maxWidth": 1920,
-    "maxHeight": 1080,
-    "maxFPS": 30
-}
-```
+### Cameras Not Appearing in HomeKit
 
-## 🔧 Troubleshooting
-
-### Cameras Not Appearing
-
-1. **Check logs** for discovery messages:
-   ```
-   [Hikvision NVR] Found 6 channel(s) on NVR
-   [Hikvision NVR] Discovered new camera: Front Door (Channel 1)
-   ```
-
-2. **Verify NVR credentials** are correct
-
-3. **Check network** - NVR must be accessible from Homebridge server
-
-### Snapshots Not Working
-
-The plugin uses the ISAPI endpoint: `/ISAPI/Streaming/channels/{channelId}01/picture`
-
-If snapshots timeout:
-1. Verify endpoint works: `curl -u admin:password http://NVR_IP/ISAPI/Streaming/channels/101/picture --output test.jpg`
-2. Check NVR firmware is up to date
-3. Try substream: `"streamType": "substream"`
+1. **Check Homebridge logs** for errors
+2. **Verify NVR credentials** - admin user required
+3. **Check network connectivity** to NVR
+4. **Enable Force Discovery** to refresh cameras
+5. **Remove cached accessories** via Homebridge UI
 
 ### High CPU Usage
 
-Enable hardware acceleration:
-1. Go to camera settings in Homebridge UI
-2. Set "Hardware Encoder" to match your hardware
-3. Restart Homebridge
-4. Check logs for: `Camera X using nvenc encoder`
+1. **Enable hardware acceleration** (see Hardware Acceleration section)
+2. **Reduce resolution** - Set maxWidth/maxHeight to 1280x720
+3. **Lower bitrate** - Reduce maxBitrate to 1000-1500
+4. **Use substream** - Manually configure source to use channel 102
 
 ### Motion Detection Not Working
 
-**v1.5.1+ Enhanced Debugging**
+1. **Check motion is enabled** in camera config
+2. **Verify ISAPI events** are working on NVR
+3. **Check Homebridge logs** for "Motion detected" messages
 
-1. **Enable debug mode**:
-   ```json
-   {
-       "debugMotion": true
-   }
-   ```
+### Snapshots Slow or Failing
 
-2. **Check startup logs** for:
-   ```
-   🎬 Starting motion event stream...
-   📡 Connecting to: /ISAPI/Event/notification/alertStream
-   👂 Registered listeners for X camera(s)
-   ✅ Event stream connected and receiving data
-   ```
+1. **Verify stillImageSource** is using ISAPI endpoint
+2. **Check network latency** to NVR
+3. **Try mainstream instead of substream** for snapshots
 
-3. **Trigger motion** and look for:
-   ```
-   📨 Event received: channel=X, type=VMD, state=active
-   🚨 Motion event: channel=X, type=VMD, active=true
-   📢 Notifying 1 listener(s) for channel X
-   Motion detected: [Camera Name]
-   ```
+### Audio Issues
 
-4. **Common issues**:
-   - **"Event missing channelID"** (v1.5.0) - Fixed in v1.5.1
-   - **Rapid flapping** (on/off every second) - Increase `motionTimeout` to 30-60 seconds
-   - **Wrong camera triggers** - Verify channel IDs with debug logs
+1. **Verify camera supports audio** in NVR settings
+2. **Check audio codec** (AAC-eld or Opus required)
+3. **Some cameras have broken AAC streams** - disable audio if errors persist
 
-5. **Manual test** (optional):
-   ```bash
-   curl -u admin:password --digest --no-buffer \
-     http://NVR_IP/ISAPI/Event/notification/alertStream
-   ```
-   Wave in front of camera - you should see XML events
+### HKSV Recording Not Working
 
-6. **NVR Configuration**:
-   - Enable motion detection on NVR
-   - Draw detection zones
-   - Enable "Notify Surveillance Center"
+1. **Verify iCloud+ subscription** with sufficient storage
+2. **Check Home Hub** is available and functioning
+3. **Enable recording** in Home app camera settings
+4. **Verify prebuffer is enabled** in plugin config
+5. **Check Homebridge logs** for HKSV-related messages
 
-## 📊 Performance
+## Development
 
-### Without Hardware Acceleration
-- 6 cameras streaming: ~60-80% CPU usage
-- FFmpeg software encoding (libx264)
-- Single-threaded per stream
+### Building from Source
 
-### With Hardware Acceleration + Quality Profiles (v1.5.0+)
+```bash
+git clone https://github.com/pit5bul/homebridge-hikvision-ultimate.git
+cd homebridge-hikvision-ultimate
+npm install
+npm run build
+npm link
+```
 
-**VAAPI on AMD GPU (Proxmox LXC)**:
-- Speed profile: 5% CPU, 40% GPU per stream
-- Balanced profile: 7% CPU, 35% GPU per stream
-- Quality profile: 10% CPU, 30% GPU per stream
-- **80% CPU reduction** vs software encoding
+### Testing
 
-**NVENC on NVIDIA GPU**:
-- 6 cameras streaming: ~5-10% CPU usage
-- GPU encoding, CPU free for other tasks
-- Near-zero latency encoding
+```bash
+# Watch mode for development
+npm run watch
 
-**Key Improvements**:
-- Full GPU pipeline (decode → scale → encode)
-- HomeKit-optimized GOP sizes (1-2s keyframes)
-- Stable streaming with no disconnections
-- Quality profiles match different use cases
+# Lint code
+npm run lint
+```
 
-## 🔐 Security
+## Support
 
-- Credentials stored in Homebridge config.json (same as other plugins)
-- RTSP URLs use URL-encoded credentials
-- Consider using HTTPS if NVR supports it: `"secure": true`
+- **Issues**: [GitHub Issues](https://github.com/pit5bul/homebridge-hikvision-ultimate/issues)
+- **Homebridge Discord**: [#plugin-development](https://discord.gg/homebridge)
+- **Funding**: [Buy Me a Coffee](https://buymeacoffee.com/pit5bul)
 
-## 🐛 Known Issues
+## Credits
 
-- ffprobe not bundled: Set `"probeOnStartup": false` (default)
-- Some NVR models may require different ISAPI endpoints for snapshots
+- **Author**: pit5bul
+- **Inspired by**: homebridge-camera-ffmpeg
+- **FFmpeg**: The FFmpeg team for the incredible video processing library
 
-## 📝 Changelog
+## License
 
-### v1.5.1 (2026-02-05) - Latest
-- 🐛 **Fixed**: Channel ID parsing for multiple XML tag variants (channelID, channelId, dynChannelID, inputIOPortID)
-- 🐛 **Fixed**: "Event missing channelID" errors on some NVR models
-- ✨ **Added**: Enhanced debug logging with emoji indicators and full raw XML output
-- ✨ **Added**: Comprehensive startup diagnostics for motion detection
-- ✨ **Added**: Better error messages with actionable guidance
-- 📚 **Added**: Motion detection troubleshooting guide
-
-### v1.5.0 (2026-02-04)
-- 🚀 **Added**: Quality profile system (Speed/Balanced/Quality) for all hardware encoders
-- 🚀 **Added**: Support for 7 hardware encoders (VAAPI, QuickSync, NVENC, AMF, VideoToolbox, Jetson, RK MPP)
-- 🐛 **Fixed**: VAAPI filter chain (removed `-color_range mpeg` causing CPU scaler insertion)
-- 🐛 **Fixed**: HomeKit GOP sizes optimized to 1-2s keyframes (was 9.6s)
-- ⚡ **Performance**: 80% CPU reduction with proper VAAPI GPU pipeline
-- ⚡ **Performance**: Full GPU processing (decode → scale → encode)
-- 🎯 **Fixed**: Stream stability (no more 19s disconnections)
-- 📚 **Added**: Quality profiles documentation and user guide
-
-### v1.2.0
-- ✅ Auto-save discovered cameras to config.json
-- ✅ Improved cleanup with better logging
-- ✅ Enhanced first-run experience
-- ✅ Better error messages and user guidance
-- ✅ Hardware acceleration dropdown in UI
-
-### v1.1.1
-- ✅ Auto-cleanup before accessory registration
-- ✅ Warning for forceDiscovery with existing cameras
-- ✅ Comprehensive logging for troubleshooting
-
-### v1.1.0
-- ✅ Fixed bitrate (2000kbps default)
-- ✅ Working snapshots (correct ISAPI endpoint)
-- ✅ Hardware acceleration support (7 encoders)
-- ✅ Enhanced logging (shows URLs and settings)
-
-### v1.0.0
-- Initial release
-- NVR auto-discovery via ISAPI
-- Motion detection support
-- FFmpeg streaming
-
-## 🤝 Contributing
-
-Issues and pull requests welcome! Please test thoroughly before submitting.
-
-## 📜 License
-
-MIT
-
-## 🙏 Credits
-
-- [homebridge-camera-ffmpeg](https://github.com/Sunoo/homebridge-camera-ffmpeg) - Inspiration for streaming implementation
-- [ffmpeg-for-homebridge](https://github.com/homebridge/ffmpeg-for-homebridge) - Bundled FFmpeg binaries
-
-## 💬 Support
-
-- GitHub Issues: [Report bugs or request features](https://github.com/pit5bul/homebridge-hikvision-ultimate/issues)
-- Homebridge Discord: #plugin-development channel
+MIT License - see [LICENSE](LICENSE) file for details

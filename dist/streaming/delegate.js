@@ -326,17 +326,17 @@ class StreamingDelegate {
                 if (qualityProfile === 'speed') {
                     gopSize = 25;
                     bframes = 0;
-                    encoderOptions = `-compression_level 1 -quality 1`;
+                    encoderOptions = '-quality 1';
                 }
                 else if (qualityProfile === 'quality') {
                     gopSize = 13;
                     bframes = 2;
-                    encoderOptions = `-compression_level 7 -quality 7`;
+                    encoderOptions = '-quality 7';
                 }
                 else if (qualityProfile === 'balanced') {
                     gopSize = 19;
                     bframes = 0;
-                    encoderOptions = `-compression_level 4 -quality 4`;
+                    encoderOptions = '-quality 4';
                 }
                 else {
                     // No profile selected (empty or undefined) - use VAAPI defaults

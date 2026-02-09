@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-02-11
+
+### 🎨 Changed
+
+**UI Simplification** - Cleaned up configuration interface
+
+Removed clutter by hiding rarely-used fields from UI (fields remain in schema for advanced config.json editing):
+- Hidden per-camera: `channelId`, `streamType`, `maxStreams`, `hwaccelDevice`, `vflip`, `hflip`
+- Hidden global: `streamType`, `probeOnStartup`, `probeTimeout`, `interfaceName`, `debugMotion`
+- Removed "Detected Stream Info" section (unused, always empty)
+
+**Reorganized Camera Sections** - Reduced from 8 to 6 logical groups:
+1. Basic: name, enabled, source, stillImageSource
+2. Video Settings: resolution, bitrate, encoder, quality profile, audio
+3. HomeKit Secure Video (HKSV): recording, prebuffer settings
+4. Motion Detection: motion sensor, timeout
+5. Advanced Video: encoder options, filters, maps, packet size, debug
+6. HomeKit Info: manufacturer, model, serial, firmware, unbridge
+
+**Quality Profile Dropdown** - Renamed first option from "None" to "Use Encoder Defaults (Recommended)"
+
+**Global Sections** - Reordered for better workflow:
+- NVR Connection → Discovery → Cameras → FFmpeg Configuration
+
+### 🔧 Fixed
+
+**VAAPI Encoder Options** - Removed unsupported flag
+
+- Removed invalid `-compression_level` flag (not supported by h264_vaapi)
+- Now only uses valid `-quality` flag with GOP size and B-frames
+- Prevents potential FFmpeg errors from unsupported options
+
+### 📚 Documentation
+
+**Complete README Rewrite** - Comprehensive documentation as if first version:
+- Clear hardware acceleration setup guide
+- Detailed HKSV configuration instructions
+- Troubleshooting section with common issues
+- Complete configuration reference
+- Quick start guide for new users
+
 ## [2.0.2] - 2025-02-09
 
 ### 🔧 Fixed
