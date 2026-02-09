@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2025-02-09
+
+### 🔧 Fixed
+
+**Config UI Layout** - Added missing fields to UI layout configuration
+
+The fields were in the schema but not in the `layout` section, so Config UI X wasn't displaying them.
+
+**Fixed**:
+- Added `qualityProfile` to "Hardware Encoding" tab
+- Added new "HomeKit Secure Video (HKSV)" tab with `recording`, `prebuffer`, `prebufferLength`
+
+**Audio Decoding When Disabled** - Skip audio track in RTSP when audio is disabled
+
+When `audio: false`, FFmpeg was still decoding the audio stream from RTSP and generating parsing errors.
+
+**Fixed**:
+- Added `-allowed_media_types video` to RTSP source when audio is disabled
+- Eliminates "Error parsing AU headers" spam in logs
+- Reduces CPU usage by not decoding unused audio
+
+**Impact**:
+- ✅ Quality Profile now visible in Hardware Encoding tab
+- ✅ HKSV options now visible in dedicated HKSV tab
+- ✅ All new v2.0.0 features now accessible in UI
+- ✅ Cleaner logs when audio disabled
+- ✅ Lower CPU usage when audio not needed
+
+**Migration from v2.0.1**:
+- No config changes needed
+- UI will now show all options in proper tabs
+- Audio errors will stop appearing in logs
+
+---
+
 ## [2.0.1] - 2025-02-09
 
 ### 🔧 Fixed

@@ -433,8 +433,14 @@ class StreamingDelegate {
             ffmpegArgs += `-init_hw_device cuda=cu:0 `;
         }
         // AMF doesn't need special init - it accepts software frames
+        // Modify source to skip audio track if audio is disabled
+        let modifiedSource = source;
+        if (!this.videoConfig.audio && source.includes('rtsp://')) {
+            // Insert -allowed_media_types video before -i to skip audio during RTSP connection
+            modifiedSource = source.replace(/-i\s+/, '-allowed_media_types video -i ');
+        }
         // Add source (includes -i)
-        ffmpegArgs += source;
+        ffmpegArgs += modifiedSource;
         // Video encoding settings
         const isHardwareEncoder = encoder !== 'software';
         const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software

@@ -551,8 +551,21 @@
               "expanded": false,
               "items": [
                 "cameras[].videoConfig.encoder",
+                "cameras[].videoConfig.qualityProfile",
                 "cameras[].videoConfig.hwaccelDevice",
                 "cameras[].videoConfig.audio"
+              ]
+            },
+            {
+              "key": "cameras[]",
+              "type": "section",
+              "title": "HomeKit Secure Video (HKSV)",
+              "expandable": true,
+              "expanded": false,
+              "items": [
+                "cameras[].videoConfig.recording",
+                "cameras[].videoConfig.prebuffer",
+                "cameras[].videoConfig.prebufferLength"
               ]
             },
             {
