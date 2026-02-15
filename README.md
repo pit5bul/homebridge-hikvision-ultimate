@@ -16,9 +16,10 @@ Homebridge plugin for Hikvision NVR cameras with **automatic discovery**, motion
 
 ### 📹 High-Quality Streaming
 - 1080p @ 30fps streaming to HomeKit
-- Hardware acceleration support (reduces CPU usage by 75-80%)
+- Hardware acceleration support (reduces CPU usage by 75-87% with VAAPI)
 - Software encoding fallback for immediate operation
 - Configurable bitrate and resolution per camera
+- **Resolution mode control** for hardware encoder optimization
 
 ### 🎯 Motion Detection
 - Real-time motion events via ISAPI event streams
@@ -216,7 +217,9 @@ Check Homebridge logs:
 [Front Door] Hardware encoder: vaapi
 ```
 
-CPU usage should drop from 80-100% to 15-25% per camera stream.
+CPU usage should drop significantly:
+- **VAAPI (full GPU pipeline):** 80-100% → 5-15% (75-87% reduction)
+- **Other hardware encoders:** 80-100% → 15-25% (60-75% reduction)
 
 ### Default Encoder Options
 
@@ -228,6 +231,110 @@ CPU usage should drop from 80-100% to 15-25% per camera stream.
 - With no quality profile: Uses encoder defaults (recommended)
 - With quality profile: Applies profile-specific GOP size and B-frame settings
 - Custom options: Can override in **Advanced Video** section
+
+## Resolution Mode Configuration
+
+### Why Resolution Mode Matters
+
+HomeKit's adaptive streaming starts all cameras at **640x360** and upgrades to higher resolution (like 1080p) after assessing network conditions (~5-10 seconds). This works well with **software encoders** but often fails with **hardware encoders** due to timing:
+
+- **Software encoders** (libx264): Initialize in ~0.5 seconds, successfully catch HomeKit's RECONFIGURE upgrade request ✅
+- **Hardware encoders** (VAAPI/QuickSync/NVENC/AMF): Initialize in 2-4 seconds, miss the RECONFIGURE window, remain stuck at 640x360 ❌
+
+**The Problem:** Hardware encoders need time to initialize GPU drivers and allocate resources. By the time they're ready, HomeKit has already sent (and given up on) the resolution upgrade request.
+
+**The Solution:** Resolution mode configuration lets you bypass adaptive streaming for hardware encoders.
+
+### Configuration Options
+
+Configure via Config UI X → Camera Settings → **Video Settings** → **Resolution Mode**:
+
+#### Adaptive (Default)
+```json
+{
+  "resolutionMode": "adaptive"
+}
+```
+- HomeKit controls resolution based on network conditions
+- Starts at 640x360, upgrades when conditions allow
+- **Best for:** Software encoders (libx264)
+- **Not recommended for:** Hardware encoders (will stay at 640x360)
+
+#### Force Max Resolution (Recommended for Hardware)
+```json
+{
+  "resolutionMode": "force-max",
+  "maxWidth": 1920,
+  "maxHeight": 1080
+}
+```
+- Ignores HomeKit's initial low-resolution request
+- Starts streaming at full resolution immediately
+- **Best for:** VAAPI, QuickSync, NVENC, AMF, VideoToolbox
+- **Why:** Bypasses adaptive streaming entirely, no dependency on RECONFIGURE timing
+- **Result:** Full 1080p quality from stream start
+
+#### Force Custom Resolution
+```json
+{
+  "resolutionMode": "force-custom",
+  "customWidth": 1280,
+  "customHeight": 720
+}
+```
+- Streams at a specific resolution regardless of HomeKit's request
+- **Best for:** Bandwidth-limited scenarios, encoder sweet spots, testing
+- **Example:** Force 720p even when HomeKit requests 1080p
+
+### Recommendations
+
+**Hardware Encoders** → Use `force-max`:
+```json
+{
+  "encoder": "vaapi",
+  "resolutionMode": "force-max"
+}
+```
+
+**Software Encoder** → Use `adaptive` (default):
+```json
+{
+  "encoder": "software",
+  "resolutionMode": "adaptive"
+}
+```
+
+**Bandwidth Limited** → Use `force-custom`:
+```json
+{
+  "encoder": "vaapi",
+  "resolutionMode": "force-custom",
+  "customWidth": 1280,
+  "customHeight": 720
+}
+```
+
+### Verification
+
+Check Homebridge logs when starting a stream:
+
+**Force-Max Mode:**
+```
+[Resolution] Force-Max mode: Using 1920x1080 (HomeKit requested 640x360)
+Starting stream: 1920x1080 1300kbps
+```
+
+**Adaptive Mode (software):**
+```
+Starting stream: 640x360 1300kbps
+[... ~10 seconds later, HomeKit upgrades to 1080p ...]
+```
+
+**Force-Custom Mode:**
+```
+[Resolution] Force-Custom mode: Using 1280x720 (HomeKit requested 640x360)
+Starting stream: 1280x720 1300kbps
+```
 
 ## HomeKit Secure Video (HKSV)
 

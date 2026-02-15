@@ -49,6 +49,10 @@ export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' |
  */
 export type QualityProfile = '' | 'speed' | 'balanced' | 'quality';
 /**
+ * Resolution mode for handling HomeKit adaptive streaming
+ */
+export type ResolutionMode = 'adaptive' | 'force-max' | 'force-custom';
+/**
  * Video configuration for a camera
  */
 export interface VideoConfig {
@@ -60,6 +64,9 @@ export interface VideoConfig {
     maxFPS?: number;
     maxBitrate?: number;
     minBitrate?: number;
+    resolutionMode?: ResolutionMode;
+    customWidth?: number;
+    customHeight?: number;
     vcodec?: string;
     encoder?: EncoderType;
     qualityProfile?: QualityProfile;

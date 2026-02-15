@@ -251,6 +251,40 @@
                   "maximum": 1080,
                   "description": "Maximum video height. HomeKit max is 1080."
                 },
+                "resolutionMode": {
+                  "title": "Resolution Mode",
+                  "type": "string",
+                  "default": "adaptive",
+                  "oneOf": [
+                    {
+                      "title": "Adaptive (HomeKit decides resolution)",
+                      "enum": ["adaptive"]
+                    },
+                    {
+                      "title": "Force Max Resolution (Always use maxWidth/maxHeight)",
+                      "enum": ["force-max"]
+                    },
+                    {
+                      "title": "Force Custom Resolution (Use customWidth/customHeight)",
+                      "enum": ["force-custom"]
+                    }
+                  ],
+                  "description": "How to handle HomeKit's resolution requests. Adaptive (default) allows HomeKit to start at low resolution and upgrade. Force modes override HomeKit requests - useful for VAAPI and other hardware encoders that work better at fixed resolutions."
+                },
+                "customWidth": {
+                  "title": "Custom Width",
+                  "type": "integer",
+                  "minimum": 320,
+                  "maximum": 1920,
+                  "description": "Custom width when resolutionMode is 'force-custom'. Must be set if using force-custom mode."
+                },
+                "customHeight": {
+                  "title": "Custom Height",
+                  "type": "integer",
+                  "minimum": 240,
+                  "maximum": 1080,
+                  "description": "Custom height when resolutionMode is 'force-custom'. Must be set if using force-custom mode."
+                },
                 "maxBitrate": {
                   "title": "Max Bitrate (kbps)",
                   "type": "integer",
@@ -493,6 +527,9 @@
               "items": [
                 "cameras[].videoConfig.maxWidth",
                 "cameras[].videoConfig.maxHeight",
+                "cameras[].videoConfig.resolutionMode",
+                "cameras[].videoConfig.customWidth",
+                "cameras[].videoConfig.customHeight",
                 "cameras[].videoConfig.maxBitrate",
                 "cameras[].videoConfig.minBitrate",
                 "cameras[].videoConfig.encoder",

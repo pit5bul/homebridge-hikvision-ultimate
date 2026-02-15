@@ -79,6 +79,31 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     let requestedHeight = request.height;
     const maxWidth = Math.min(this.videoConfig.maxWidth || HOMEKIT_MAX_WIDTH, HOMEKIT_MAX_WIDTH);
     const maxHeight = Math.min(this.videoConfig.maxHeight || HOMEKIT_MAX_HEIGHT, HOMEKIT_MAX_HEIGHT);
+
+    // Handle resolution mode - override HomeKit's request if configured
+    const resolutionMode = this.videoConfig.resolutionMode || 'adaptive';
+    
+    if (!isSnapshot && resolutionMode !== 'adaptive') {
+      if (resolutionMode === 'force-max') {
+        // Force maximum resolution
+        this.log.info(`[Resolution] Force-Max mode: Using ${maxWidth}x${maxHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
+        requestedWidth = maxWidth;
+        requestedHeight = maxHeight;
+      } else if (resolutionMode === 'force-custom') {
+        // Force custom resolution
+        const customWidth = this.videoConfig.customWidth;
+        const customHeight = this.videoConfig.customHeight;
+        
+        if (customWidth && customHeight) {
+          this.log.info(`[Resolution] Force-Custom mode: Using ${customWidth}x${customHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
+          requestedWidth = customWidth;
+          requestedHeight = customHeight;
+        } else {
+          this.log.error(`[Resolution] Force-Custom mode selected but customWidth/customHeight not set! Falling back to adaptive.`, this.cameraConfig.name);
+        }
+      }
+    }
+
     if (requestedWidth > maxWidth) requestedWidth = maxWidth;
     if (requestedHeight > maxHeight) requestedHeight = maxHeight;
     resInfo.width = requestedWidth;
@@ -96,16 +121,13 @@ export class StreamingDelegate implements CameraStreamingDelegate {
       if (this.videoConfig.vflip) filters.push('vflip');
       
       if (useHardwareAccel) {
-        // Hardware acceleration path (software decode → hardware encode)
+        // Hardware acceleration path
         if (encoder === 'vaapi') {
-          // Software decode → VAAPI encode
-          // Scale on CPU, convert to NV12, then upload to GPU
-          filters.push('scale=' +
-            (resInfo.width > 0 ? `'min(${resInfo.width},iw)'` : 'iw') + ':' +
-            (resInfo.height > 0 ? `'min(${resInfo.height},ih)'` : 'ih') +
-            ':force_original_aspect_ratio=decrease');
-          filters.push('format=nv12');
-          filters.push('hwupload');
+          // FULL GPU: Hardware decode → GPU scale → Hardware encode
+          filters.push('scale_vaapi=' +
+            (resInfo.width > 0 ? `w='min(${resInfo.width},iw)'` : 'w=iw') + ':' +
+            (resInfo.height > 0 ? `h='min(${resInfo.height},ih)'` : 'h=ih') +
+            ':format=nv12');
         } else if (encoder === 'amf') {
           // AMF accepts software frames directly (NV12)
           // Just scale and convert to NV12, AMF will upload internally
@@ -298,7 +320,7 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     if (encoder === 'software') {
       this.log.info(`Video encoder: ${vcodec} (software)`, this.cameraConfig.name);
     } else if (encoder === 'vaapi') {
-      this.log.info(`Video encoder: ${vcodec} (VAAPI - CPU decode, GPU scale+encode)`, this.cameraConfig.name);
+      this.log.info(`Video encoder: ${vcodec} (VAAPI - FULL GPU: hw decode+scale+encode)`, this.cameraConfig.name);
     } else if (encoder === 'amf') {
       this.log.info(`Video encoder: ${vcodec} (AMF - CPU decode+scale, GPU encode)`, this.cameraConfig.name);
     } else if (encoder === 'quicksync') {
@@ -463,11 +485,11 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     // Start building command
     let ffmpegArgs = '';
     
-    // Hardware acceleration setup (software decode → hardware encode)
+    // Hardware acceleration setup
     if (encoder === 'vaapi') {
-      // Software decode → VAAPI encode
+      // FULL GPU: Hardware decode + scale + encode
       const hwDevice = this.videoConfig.hwaccelDevice || '/dev/dri/renderD128';
-      ffmpegArgs += `-init_hw_device vaapi=va:${hwDevice} `;
+      ffmpegArgs += `-hwaccel vaapi -hwaccel_device ${hwDevice} -hwaccel_output_format vaapi `;
     } else if (encoder === 'quicksync') {
       ffmpegArgs += `-init_hw_device qsv=hw `;
     } else if (encoder === 'nvenc') {
@@ -488,7 +510,7 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     // Video encoding settings
     const isHardwareEncoder = encoder !== 'software';
     const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software
-    const colorRange = isHardwareEncoder ? ' -color_range mpeg' : ''; // Only for hardware encoders
+    const colorRange = (isHardwareEncoder && encoder !== 'vaapi') ? ' -color_range mpeg' : ''; // Skip for VAAPI (conflicts with scale_vaapi)
     const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // Only add if quality profile set
     const bframeParams = bframes >= 0 ? ` -bf ${bframes}` : ''; // Only add if quality profile set (-1 = skip)
     

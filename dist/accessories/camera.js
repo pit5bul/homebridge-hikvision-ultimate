@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CameraAccessory = void 0;
+const homebridge_1 = require("homebridge");
 const delegate_1 = require("../streaming/delegate");
 const recordingDelegate_1 = require("../streaming/recordingDelegate");
 const settings_1 = require("../settings");
@@ -41,20 +42,20 @@ class CameraAccessory {
             cameraStreamCount: cameraConfig.videoConfig?.maxStreams || 2,
             delegate: this.streamingDelegate,
             streamingOptions: {
-                supportedCryptoSuites: [0 /* this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80 */],
+                supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
                 video: {
                     resolutions: [
                         [1920, 1080, 30], [1280, 720, 30], [640, 480, 30], [640, 360, 30],
                         [480, 360, 30], [480, 270, 30], [320, 240, 30], [320, 240, 15], [320, 180, 30],
                     ],
                     codec: {
-                        profiles: [0 /* this.hap.H264Profile.BASELINE */, 1 /* this.hap.H264Profile.MAIN */, 2 /* this.hap.H264Profile.HIGH */],
-                        levels: [0 /* this.hap.H264Level.LEVEL3_1 */, 1 /* this.hap.H264Level.LEVEL3_2 */, 2 /* this.hap.H264Level.LEVEL4_0 */],
+                        profiles: [this.hap.H264Profile.BASELINE, this.hap.H264Profile.MAIN, this.hap.H264Profile.HIGH],
+                        levels: [this.hap.H264Level.LEVEL3_1, this.hap.H264Level.LEVEL3_2, this.hap.H264Level.LEVEL4_0],
                     },
                 },
                 audio: cameraConfig.videoConfig?.audio ? {
                     twoWayAudio: false,
-                    codecs: [{ type: "AAC-eld" /* this.hap.AudioStreamingCodecType.AAC_ELD */, samplerate: 16 /* this.hap.AudioStreamingSamplerate.KHZ_16 */ }],
+                    codecs: [{ type: this.hap.AudioStreamingCodecType.AAC_ELD, samplerate: this.hap.AudioStreamingSamplerate.KHZ_16 }],
                 } : undefined,
             },
             // Add HKSV recording configuration if enabled
@@ -62,25 +63,25 @@ class CameraAccessory {
                 options: {
                     prebufferLength: cameraConfig.videoConfig?.prebufferLength || 4000,
                     overrideEventTriggerOptions: [
-                        1 /* this.hap.EventTriggerOption.MOTION */,
-                        2 /* this.hap.EventTriggerOption.DOORBELL */,
+                        this.hap.EventTriggerOption.MOTION,
+                        this.hap.EventTriggerOption.DOORBELL,
                     ],
                     mediaContainerConfiguration: [{
                             type: 0,
                             fragmentLength: 4000,
                         }],
                     video: {
-                        type: 0 /* this.hap.VideoCodecType.H264 */,
+                        type: this.hap.VideoCodecType.H264,
                         parameters: {
                             levels: [
-                                0 /* this.hap.H264Level.LEVEL3_1 */,
-                                1 /* this.hap.H264Level.LEVEL3_2 */,
-                                2 /* this.hap.H264Level.LEVEL4_0 */,
+                                this.hap.H264Level.LEVEL3_1,
+                                this.hap.H264Level.LEVEL3_2,
+                                this.hap.H264Level.LEVEL4_0,
                             ],
                             profiles: [
-                                0 /* this.hap.H264Profile.BASELINE */,
-                                1 /* this.hap.H264Profile.MAIN */,
-                                2 /* this.hap.H264Profile.HIGH */,
+                                this.hap.H264Profile.BASELINE,
+                                this.hap.H264Profile.MAIN,
+                                this.hap.H264Profile.HIGH,
                             ],
                         },
                         resolutions: [
@@ -99,9 +100,9 @@ class CameraAccessory {
                     },
                     audio: {
                         codecs: [{
-                                type: 0 /* AudioRecordingCodecType.AAC_LC */,
+                                type: homebridge_1.AudioRecordingCodecType.AAC_LC,
                                 bitrateMode: 0,
-                                samplerate: [3 /* AudioRecordingSamplerate.KHZ_32 */],
+                                samplerate: [homebridge_1.AudioRecordingSamplerate.KHZ_32],
                                 audioChannels: 1,
                             }],
                     },

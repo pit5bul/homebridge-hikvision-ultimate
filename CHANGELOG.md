@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2026-02-15
+
+### ✨ Added
+
+**Resolution Mode Configuration** - Configurable resolution handling for all encoders
+
+Introduces codec-agnostic resolution control to solve HomeKit adaptive streaming issues with hardware encoders:
+
+- **`resolutionMode`**: Three modes available via Config UI dropdown
+  - **Adaptive** (default): HomeKit controls resolution (starts at 640x360, upgrades based on network conditions)
+  - **Force Max Resolution**: Always streams at maxWidth/maxHeight (recommended for VAAPI, QuickSync, NVENC, AMF)
+  - **Force Custom Resolution**: Streams at user-defined customWidth/customHeight
+
+- **`customWidth`** and **`customHeight`**: Optional fields for force-custom mode
+
+**Why This Matters:** Hardware encoders (VAAPI, QuickSync, NVENC, AMF) have 2-4 second initialization overhead that causes them to miss HomeKit's RECONFIGURE request window, resulting in streams stuck at 640x360. Force-max mode bypasses adaptive streaming to start at full resolution immediately.
+
+**Full GPU Pipeline for VAAPI** - Complete hardware acceleration
+
+VAAPI implementation now achieves true full GPU pipeline:
+- Hardware decode: `-hwaccel vaapi -hwaccel_output_format vaapi`
+- GPU scaling: `scale_vaapi` filter (eliminates CPU scaling + GPU upload)
+- Hardware encode: `h264_vaapi`
+- Removed `-color_range mpeg` for VAAPI (prevents auto-scaler insertion)
+
+**Performance:** 75-87% CPU reduction (from 40-80% to 5-15%) with full 1920x1080 quality from stream start.
+
+### 🎨 Changed
+
+**Improved VAAPI Logging**
+- Updated encoder message: "VAAPI - FULL GPU: hw decode+scale+encode" (previously inaccurate "CPU decode, GPU scale+encode")
+
+### 📚 Documentation
+
+**Config Schema Enhanced**
+- Added resolution mode fields to Video Settings section in Config UI
+- Clear descriptions explaining when to use each mode
+- Helpful guidance on hardware encoder timing issues
+
+**Technical Insight:** Software encoders (libx264) start in ~0.5s and catch HomeKit's RECONFIGURE request. Hardware encoders initialize in 2-4s and miss the upgrade window, staying at low resolution. Resolution mode configuration solves this universally for all hardware encoders.
+
 ## [2.0.5] - 2026-02-11
 
 ### ✨ Added

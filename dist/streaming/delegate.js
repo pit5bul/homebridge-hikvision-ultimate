@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StreamingDelegate = void 0;
+const homebridge_1 = require("homebridge");
 const child_process_1 = require("child_process");
 const settings_1 = require("../settings");
 const pick_port_1 = require("pick-port");
@@ -27,6 +28,29 @@ class StreamingDelegate {
         let requestedHeight = request.height;
         const maxWidth = Math.min(this.videoConfig.maxWidth || settings_1.HOMEKIT_MAX_WIDTH, settings_1.HOMEKIT_MAX_WIDTH);
         const maxHeight = Math.min(this.videoConfig.maxHeight || settings_1.HOMEKIT_MAX_HEIGHT, settings_1.HOMEKIT_MAX_HEIGHT);
+        // Handle resolution mode - override HomeKit's request if configured
+        const resolutionMode = this.videoConfig.resolutionMode || 'adaptive';
+        if (!isSnapshot && resolutionMode !== 'adaptive') {
+            if (resolutionMode === 'force-max') {
+                // Force maximum resolution
+                this.log.info(`[Resolution] Force-Max mode: Using ${maxWidth}x${maxHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
+                requestedWidth = maxWidth;
+                requestedHeight = maxHeight;
+            }
+            else if (resolutionMode === 'force-custom') {
+                // Force custom resolution
+                const customWidth = this.videoConfig.customWidth;
+                const customHeight = this.videoConfig.customHeight;
+                if (customWidth && customHeight) {
+                    this.log.info(`[Resolution] Force-Custom mode: Using ${customWidth}x${customHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
+                    requestedWidth = customWidth;
+                    requestedHeight = customHeight;
+                }
+                else {
+                    this.log.error(`[Resolution] Force-Custom mode selected but customWidth/customHeight not set! Falling back to adaptive.`, this.cameraConfig.name);
+                }
+            }
+        }
         if (requestedWidth > maxWidth)
             requestedWidth = maxWidth;
         if (requestedHeight > maxHeight)
@@ -44,16 +68,13 @@ class StreamingDelegate {
             if (this.videoConfig.vflip)
                 filters.push('vflip');
             if (useHardwareAccel) {
-                // Hardware acceleration path (software decode → hardware encode)
+                // Hardware acceleration path
                 if (encoder === 'vaapi') {
-                    // Software decode → VAAPI encode
-                    // Scale on CPU, convert to NV12, then upload to GPU
-                    filters.push('scale=' +
-                        (resInfo.width > 0 ? `'min(${resInfo.width},iw)'` : 'iw') + ':' +
-                        (resInfo.height > 0 ? `'min(${resInfo.height},ih)'` : 'ih') +
-                        ':force_original_aspect_ratio=decrease');
-                    filters.push('format=nv12');
-                    filters.push('hwupload');
+                    // FULL GPU: Hardware decode → GPU scale → Hardware encode
+                    filters.push('scale_vaapi=' +
+                        (resInfo.width > 0 ? `w='min(${resInfo.width},iw)'` : 'w=iw') + ':' +
+                        (resInfo.height > 0 ? `h='min(${resInfo.height},ih)'` : 'h=ih') +
+                        ':format=nv12');
                 }
                 else if (encoder === 'amf') {
                     // AMF accepts software frames directly (NV12)
@@ -180,16 +201,16 @@ class StreamingDelegate {
     }
     handleStreamRequest(request, callback) {
         switch (request.type) {
-            case "start" /* StreamRequestTypes.START */:
+            case homebridge_1.StreamRequestTypes.START:
                 this.startStream(request, callback);
                 break;
-            case "reconfigure" /* StreamRequestTypes.RECONFIGURE */:
+            case homebridge_1.StreamRequestTypes.RECONFIGURE:
                 if ('video' in request) {
                     this.log.debug(`Reconfigure ignored: ${request.video.width}x${request.video.height}`, this.cameraConfig.name);
                 }
                 callback();
                 break;
-            case "stop" /* StreamRequestTypes.STOP */:
+            case homebridge_1.StreamRequestTypes.STOP:
                 this.stopStream(request.sessionID);
                 callback();
                 break;
@@ -240,7 +261,7 @@ class StreamingDelegate {
             this.log.info(`Video encoder: ${vcodec} (software)`, this.cameraConfig.name);
         }
         else if (encoder === 'vaapi') {
-            this.log.info(`Video encoder: ${vcodec} (VAAPI - CPU decode, GPU scale+encode)`, this.cameraConfig.name);
+            this.log.info(`Video encoder: ${vcodec} (VAAPI - FULL GPU: hw decode+scale+encode)`, this.cameraConfig.name);
         }
         else if (encoder === 'amf') {
             this.log.info(`Video encoder: ${vcodec} (AMF - CPU decode+scale, GPU encode)`, this.cameraConfig.name);
@@ -263,8 +284,8 @@ class StreamingDelegate {
         const ffmpegArgs = this.buildFfmpegArgs(source, sessionInfo, resolution, bitrate, request);
         this.log.debug(`FFmpeg command: ${this.videoProcessor} ${ffmpegArgs}`, this.cameraConfig.name);
         if (this.videoConfig.audio) {
-            const audioCodecName = 'audio' in request && request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */ ? 'OPUS' :
-                'audio' in request && request.audio.codec === "AAC-eld" /* AudioStreamingCodecType.AAC_ELD */ ? 'AAC-eld' : 'unknown';
+            const audioCodecName = 'audio' in request && request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS ? 'OPUS' :
+                'audio' in request && request.audio.codec === homebridge_1.AudioStreamingCodecType.AAC_ELD ? 'AAC-eld' : 'unknown';
             this.log.info(`Audio enabled: ${audioCodecName}`, this.cameraConfig.name);
         }
         // Split the command string into array for spawn
@@ -420,11 +441,11 @@ class StreamingDelegate {
         }
         // Start building command
         let ffmpegArgs = '';
-        // Hardware acceleration setup (software decode → hardware encode)
+        // Hardware acceleration setup
         if (encoder === 'vaapi') {
-            // Software decode → VAAPI encode
+            // FULL GPU: Hardware decode + scale + encode
             const hwDevice = this.videoConfig.hwaccelDevice || '/dev/dri/renderD128';
-            ffmpegArgs += `-init_hw_device vaapi=va:${hwDevice} `;
+            ffmpegArgs += `-hwaccel vaapi -hwaccel_device ${hwDevice} -hwaccel_output_format vaapi `;
         }
         else if (encoder === 'quicksync') {
             ffmpegArgs += `-init_hw_device qsv=hw `;
@@ -444,7 +465,7 @@ class StreamingDelegate {
         // Video encoding settings
         const isHardwareEncoder = encoder !== 'software';
         const pixFmt = isHardwareEncoder ? '' : ' -pix_fmt yuv420p'; // Only set for software
-        const colorRange = isHardwareEncoder ? ' -color_range mpeg' : ''; // Only for hardware encoders
+        const colorRange = (isHardwareEncoder && encoder !== 'vaapi') ? ' -color_range mpeg' : ''; // Skip for VAAPI (conflicts with scale_vaapi)
         const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // Only add if quality profile set
         const bframeParams = bframes >= 0 ? ` -bf ${bframes}` : ''; // Only add if quality profile set (-1 = skip)
         ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'} -codec:v ${vcodec}${pixFmt}${colorRange}${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''}${encoderOptions ? ` ${encoderOptions}` : ''}${bframeParams}${gopParams}${bitrate > 0 ? ` -b:v ${bitrate}k` : ''} -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
@@ -454,10 +475,10 @@ class StreamingDelegate {
             + ` -srtp_out_params ${sessionInfo.videoSRTP.toString('base64')} srtp://${sessionInfo.address}:${sessionInfo.videoPort}?rtcpport=${sessionInfo.videoPort}&pkt_size=${mtu}`;
         // Audio (if enabled)
         if (this.videoConfig.audio && 'audio' in request) {
-            if (request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */ || request.audio.codec === "AAC-eld" /* AudioStreamingCodecType.AAC_ELD */) {
+            if (request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS || request.audio.codec === homebridge_1.AudioStreamingCodecType.AAC_ELD) {
                 ffmpegArgs // Audio
                     += `${(this.videoConfig.mapaudio ? ` -map ${this.videoConfig.mapaudio}` : ' -vn -sn -dn')
-                        + (request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */
+                        + (request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS
                             ? ' -codec:a libopus'
                                 + ' -application lowdelay'
                             : ' -codec:a libfdk_aac'
