@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2026-03-25
+
+### 🔒 Security
+
+- Upgraded dev dependencies to resolve two high-severity `minimatch` vulnerabilities (CVE affecting `minimatch < 3.1.3` and `minimatch >= 9.0.0 < 9.0.7`)
+- No plugin functionality changes — only development tooling affected
+
+### 🔧 Maintenance
+
+- Upgraded `eslint` to v9 with new flat config format (`eslint.config.js`)
+- Upgraded `@typescript-eslint` to v8
+- Updated GitHub Actions workflow to Node.js 24 (resolves Node.js 20 deprecation warning)
+
+
 ## [2.0.6] - 2026-02-15
 
 ### ✨ Added
