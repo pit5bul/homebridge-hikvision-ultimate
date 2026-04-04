@@ -18,6 +18,7 @@ import {
   DEFAULT_VIDEO_CONFIG,
   HOMEKIT_MAX_WIDTH,
   HOMEKIT_MAX_HEIGHT,
+  QUALITY_PRESETS,
 } from '../settings';
 import { pickPort } from 'pick-port';
 
@@ -278,6 +279,11 @@ export class StreamingDelegate implements CameraStreamingDelegate {
 
     let bitrate = request.video.max_bit_rate;
     if (this.videoConfig.maxBitrate && bitrate > this.videoConfig.maxBitrate) bitrate = this.videoConfig.maxBitrate;
+    // qualityPreset bitrate is a floor — don't let HomeKit's probe bitrate win
+    if (this.videoConfig.qualityPreset) {
+      const presetBitrate = QUALITY_PRESETS[this.videoConfig.qualityPreset]?.maxBitrate;
+      if (presetBitrate && bitrate < presetBitrate) bitrate = presetBitrate;
+    }
 
     this.log.info(`Starting stream: ${resolution.width}x${resolution.height} ${bitrate}kbps`, this.cameraConfig.name);
 

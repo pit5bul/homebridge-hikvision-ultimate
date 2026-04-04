@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3] - 2026-04-04
+
+### 🔧 Fixed
+
+- **Stream bitrate** — `qualityPreset` now also acts as a bitrate floor. HomeKit's adaptive streaming probe sends a very low bitrate (132kbps) on the initial START request. The preset bitrate (e.g. 4000kbps for `1080p-hq`) is now applied as a minimum, so the stream starts at the correct quality immediately.
+
 ## [2.1.2] - 2026-04-04
 
 ### 🔧 Fixed
