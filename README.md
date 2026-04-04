@@ -8,6 +8,13 @@
 
 Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, motion detection, and hardware-accelerated streaming.
 
+## What's New in v2.1.4
+
+- **Stream Type Override removed from UI** — configure stream type globally via Default Stream Type. Advanced users can still set `streamType` per-camera in config.json directly.
+- **Security patch** — resolved `micromatch` Method Injection vulnerability in dev dependencies.
+
+---
+
 ---
 
 ## Features
