@@ -1,6 +1,6 @@
 {
   "name": "homebridge-hikvision-ultimate",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Homebridge plugin for Hikvision NVR cameras with ISAPI discovery, motion detection, and FFmpeg streaming",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
