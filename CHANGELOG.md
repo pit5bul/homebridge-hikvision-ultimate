@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.4] - 2026-04-05
+
+### 🎨 Changed
+
+- **Stream Type Override removed from UI** — the per-camera stream type override has been removed from the Config UI to simplify camera setup. The global Default Stream Type at the NVR level is sufficient for most setups. The field remains supported in config.json for advanced users who set it manually.
+
+### 🔒 Security
+
+- Patching dependency vulnerability: `micromatch` — Method Injection in POSIX Character Classes causes incorrect glob matching. Resolved via Dependabot dependency update. Development tooling only — no plugin runtime functionality affected.
+
 ## [2.1.3] - 2026-04-04
 
 ### 🔧 Fixed
