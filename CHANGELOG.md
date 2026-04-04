@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2026-04-04
+
+### 🔧 Fixed
+
+- **Stream quality** — `qualityPreset` now acts as a resolution floor. Instead of allowing HomeKit to start at its adaptive streaming probe resolution (640x360), the plugin immediately starts at the configured preset resolution (e.g. 1080p). This is the correct behaviour — equivalent to the old `resolutionMode: force-max`.
+
+### 🗑️ Reverted
+
+- Removed the RECONFIGURE restart logic from v2.1.1 (it caused unnecessary stream interruptions and was solving the wrong problem)
+
 ## [2.1.1] - 2026-04-04
 
 ### 🔧 Fixed

@@ -38,7 +38,6 @@ interface SessionInfo {
 
 interface ActiveSession {
   sessionInfo: SessionInfo;
-  lastRequest: StreamingRequest;
   videoProcess?: ChildProcess;
   timeout?: NodeJS.Timeout;
 }
@@ -77,6 +76,12 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     const maxWidth = Math.min(this.videoConfig.maxWidth || HOMEKIT_MAX_WIDTH, HOMEKIT_MAX_WIDTH);
     const maxHeight = Math.min(this.videoConfig.maxHeight || HOMEKIT_MAX_HEIGHT, HOMEKIT_MAX_HEIGHT);
 
+    // qualityPreset acts as a floor for streaming — force the preset resolution
+    // regardless of what HomeKit requests (HomeKit always starts low as a probe)
+    if (!isSnapshot && this.videoConfig.qualityPreset) {
+      requestedWidth = maxWidth;
+      requestedHeight = maxHeight;
+    }
 
     if (requestedWidth > maxWidth) requestedWidth = maxWidth;
     if (requestedHeight > maxHeight) requestedHeight = maxHeight;
@@ -238,19 +243,13 @@ export class StreamingDelegate implements CameraStreamingDelegate {
       case StreamRequestTypes.START:
         this.startStream(request, callback);
         break;
-      case StreamRequestTypes.RECONFIGURE: {
-        if (!('video' in request)) { callback(); break; }
-        const active = this.activeSessions.get(request.sessionID);
-        if (!active) { callback(); break; }
-        this.log.info(`Reconfigure: ${request.video.width}x${request.video.height} ${request.video.max_bit_rate}kbps`, this.cameraConfig.name);
-        // Kill existing process and restart at new resolution using stored session info
-        if (active.videoProcess) active.videoProcess.kill('SIGKILL');
-        if (active.timeout) clearTimeout(active.timeout);
-        this.activeSessions.delete(request.sessionID);
-        this.pendingSessions.set(request.sessionID, active.sessionInfo);
-        this.startStream(request, callback);
+      case StreamRequestTypes.RECONFIGURE:
+        // qualityPreset forces the start resolution so RECONFIGURE is a no-op
+        if ('video' in request) {
+          this.log.debug(`Reconfigure ignored (already at preset resolution): ${request.video.width}x${request.video.height}`, this.cameraConfig.name);
+        }
+        callback();
         break;
-      }
       case StreamRequestTypes.STOP:
         this.stopStream(request.sessionID);
         callback();
@@ -319,7 +318,7 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     // Split the command string into array for spawn
     const args = ffmpegArgs.split(/\s+/).filter(arg => arg.length > 0);
     const ffmpeg = spawn(this.videoProcessor, args, { env: process.env });
-    const activeSession: ActiveSession = { sessionInfo, lastRequest: request, videoProcess: ffmpeg };
+    const activeSession: ActiveSession = { sessionInfo, videoProcess: ffmpeg };
     this.activeSessions.set(request.sessionID, activeSession);
 
     ffmpeg.stderr?.on('data', (data: Buffer) => {
