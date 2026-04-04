@@ -2,7 +2,7 @@
   "pluginAlias": "HikvisionUltimate",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Hikvision Ultimate \u2014 official Homebridge plugin for Hikvision NVR cameras with ISAPI auto-discovery, motion detection, and FFmpeg streaming.",
+  "headerDisplay": "Hikvision Ultimate — official Homebridge plugin for Hikvision NVR cameras with ISAPI auto-discovery, motion detection, and FFmpeg streaming.",
   "footerDisplay": "For help and documentation, visit the [GitHub repository](https://github.com/pit5bul/homebridge-hikvision-ultimate).",
   "schema": {
     "type": "object",
@@ -90,7 +90,7 @@
         "title": "Custom FFmpeg Path",
         "type": "string",
         "placeholder": "/usr/bin/ffmpeg",
-        "description": "Path to a custom FFmpeg binary. Required for hardware encoders (VAAPI, NVENC, QuickSync, etc.) \u2014 the bundled FFmpeg does not include hardware support."
+        "description": "Path to a custom FFmpeg binary. Required for hardware encoders (VAAPI, NVENC, QuickSync, etc.) — the bundled FFmpeg does not include hardware support."
       },
       "probeOnStartup": {
         "title": "Probe Streams on Startup",
@@ -139,37 +139,6 @@
               "type": "string",
               "description": "Display name in HomeKit."
             },
-            "streamType": {
-              "title": "Stream Type Override",
-              "type": "string",
-              "oneOf": [
-                {
-                  "title": "Use global default",
-                  "enum": [
-                    ""
-                  ]
-                },
-                {
-                  "title": "Mainstream (high quality)",
-                  "enum": [
-                    "mainstream"
-                  ]
-                },
-                {
-                  "title": "Substream (lower bandwidth)",
-                  "enum": [
-                    "substream"
-                  ]
-                },
-                {
-                  "title": "Third stream",
-                  "enum": [
-                    "thirdstream"
-                  ]
-                }
-              ],
-              "description": "Override the global stream type for this camera only."
-            },
             "motion": {
               "title": "Enable Motion Sensor",
               "type": "boolean",
@@ -193,19 +162,19 @@
                   "default": "1080p-standard",
                   "oneOf": [
                     {
-                      "title": "720p Standard (1280\u00d7720, 1500kbps)",
+                      "title": "720p Standard (1280×720, 1500kbps)",
                       "enum": [
                         "720p-standard"
                       ]
                     },
                     {
-                      "title": "1080p Standard (1920\u00d71080, 2000kbps) \u2014 Recommended",
+                      "title": "1080p Standard (1920×1080, 2000kbps) — Recommended",
                       "enum": [
                         "1080p-standard"
                       ]
                     },
                     {
-                      "title": "1080p High Quality (1920\u00d71080, 4000kbps)",
+                      "title": "1080p High Quality (1920×1080, 4000kbps)",
                       "enum": [
                         "1080p-hq"
                       ]
@@ -291,49 +260,49 @@
                   "default": "software",
                   "oneOf": [
                     {
-                      "title": "Software (libx264) \u2014 works everywhere",
+                      "title": "Software (libx264) — works everywhere",
                       "enum": [
                         "software"
                       ]
                     },
                     {
-                      "title": "VAAPI \u2014 Intel/AMD GPU on Linux",
+                      "title": "VAAPI — Intel/AMD GPU on Linux",
                       "enum": [
                         "vaapi"
                       ]
                     },
                     {
-                      "title": "NVENC \u2014 NVIDIA GPU",
+                      "title": "NVENC — NVIDIA GPU",
                       "enum": [
                         "nvenc"
                       ]
                     },
                     {
-                      "title": "QuickSync \u2014 Intel integrated GPU",
+                      "title": "QuickSync — Intel integrated GPU",
                       "enum": [
                         "quicksync"
                       ]
                     },
                     {
-                      "title": "AMF \u2014 AMD GPU",
+                      "title": "AMF — AMD GPU",
                       "enum": [
                         "amf"
                       ]
                     },
                     {
-                      "title": "VideoToolbox \u2014 Apple Mac",
+                      "title": "VideoToolbox — Apple Mac",
                       "enum": [
                         "videotoolbox"
                       ]
                     },
                     {
-                      "title": "V4L2 \u2014 Raspberry Pi 4+",
+                      "title": "V4L2 — Raspberry Pi 4+",
                       "enum": [
                         "v4l2"
                       ]
                     }
                   ],
-                  "description": "Hardware encoder reduces CPU usage by 70\u201390%. Requires a custom FFmpeg path with hardware support compiled in."
+                  "description": "Hardware encoder reduces CPU usage by 70–90%. Requires a custom FFmpeg path with hardware support compiled in."
                 },
                 "qualityProfile": {
                   "title": "Encoder Quality Profile",
@@ -347,19 +316,19 @@
                       ]
                     },
                     {
-                      "title": "Speed \u2014 fastest encode, lower quality",
+                      "title": "Speed — fastest encode, lower quality",
                       "enum": [
                         "speed"
                       ]
                     },
                     {
-                      "title": "Balanced \u2014 good balance of speed and quality",
+                      "title": "Balanced — good balance of speed and quality",
                       "enum": [
                         "balanced"
                       ]
                     },
                     {
-                      "title": "Quality \u2014 best quality, slower encode",
+                      "title": "Quality — best quality, slower encode",
                       "enum": [
                         "quality"
                       ]
@@ -408,7 +377,7 @@
                   "title": "Custom Video Filter",
                   "type": "string",
                   "placeholder": "Leave empty for automatic",
-                  "description": "Custom FFmpeg video filter. Leave empty \u2014 the plugin automatically applies the correct filter based on your encoder."
+                  "description": "Custom FFmpeg video filter. Leave empty — the plugin automatically applies the correct filter based on your encoder."
                 },
                 "debug": {
                   "title": "Debug FFmpeg Output",
@@ -448,7 +417,7 @@
   "layout": [
     {
       "type": "section",
-      "title": "\ud83d\udce1 NVR Connection",
+      "title": "📡 NVR Connection",
       "expandable": true,
       "expanded": true,
       "items": [
@@ -465,7 +434,7 @@
     },
     {
       "type": "section",
-      "title": "\ud83d\udcf7 Cameras",
+      "title": "📷 Cameras",
       "expandable": true,
       "expanded": true,
       "items": [
@@ -484,14 +453,13 @@
               "items": [
                 "cameras[].enabled",
                 "cameras[].name",
-                "cameras[].channelId",
-                "cameras[].streamType"
+                "cameras[].channelId"
               ]
             },
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83c\udfac Video Quality",
+              "title": "🎬 Video Quality",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -503,7 +471,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83d\udd0a Audio",
+              "title": "🔊 Audio",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -514,7 +482,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83c\udfaf Motion Detection",
+              "title": "🎯 Motion Detection",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -525,7 +493,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\u2601\ufe0f iCloud Recording (HKSV)",
+              "title": "☁️ iCloud Recording (HKSV)",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -538,7 +506,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83d\udd27 FFmpeg / Encoder",
+              "title": "🔧 FFmpeg / Encoder",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -553,7 +521,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83d\udccb Override Camera Info",
+              "title": "📋 Override Camera Info",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -566,7 +534,7 @@
             {
               "key": "cameras[]",
               "type": "section",
-              "title": "\ud83d\udc1b Advanced / Debug",
+              "title": "🐛 Advanced / Debug",
               "expandable": true,
               "expanded": false,
               "items": [
@@ -585,7 +553,7 @@
     },
     {
       "type": "section",
-      "title": "\ud83d\udd27 Global FFmpeg",
+      "title": "🔧 Global FFmpeg",
       "expandable": true,
       "expanded": false,
       "items": [
