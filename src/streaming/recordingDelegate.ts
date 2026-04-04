@@ -1,9 +1,10 @@
-import { spawn, ChildProcess } from 'child_process';
+import {
+  spawn, ChildProcess,
+} from 'child_process';
 import {
   API,
   CameraRecordingDelegate,
   CameraRecordingConfiguration,
-  HAP,
   HDSProtocolSpecificErrorReason,
   RecordingPacket,
   AudioRecordingCodecType,
@@ -38,7 +39,6 @@ export class RecordingDelegate implements CameraRecordingDelegate {
     cameraName: string,
     videoConfig: VideoConfig,
     api: API,
-    _hap: HAP,
     videoProcessor: string,
   ) {
     this.log = log;

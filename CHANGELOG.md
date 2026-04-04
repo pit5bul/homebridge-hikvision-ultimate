@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-04
+
+### ✨ Added
+
+- **`copyAudio` option** per camera — pass audio directly from the NVR without re-encoding. Works when the camera outputs AAC-compatible audio. Disable if audio is silent or choppy (default: false)
+- **`qualityPreset` dropdown** per camera — replaces manual resolution and bitrate fields with three simple options:
+  - 720p Standard (1280×720, 1500kbps)
+  - 1080p Standard (1920×1080, 2000kbps) — recommended
+  - 1080p High Quality (1920×1080, 4000kbps)
+- All previously hidden fields now visible in Config UI: `streamType`, `probeOnStartup`, `probeTimeout`, `interfaceName`, `debugMotion`, `hwaccelDevice`, `vflip`, `hflip`
+
+### 🎨 Changed
+
+- **UI completely restructured** — per-camera sections now use emoji titles and are collapsed by default for a much cleaner experience:
+  - Basic, 🎬 Video Quality, 🔊 Audio, 🎯 Motion Detection, ☁️ iCloud Recording (HKSV), 🔧 FFmpeg / Encoder, 📋 Override Camera Info, 🐛 Advanced / Debug
+- **`forceDiscovery`** folded into NVR Connection section — standalone Discovery section removed
+- **`source` and `stillImageSource`** moved to Advanced / Debug — auto-generated for all standard setups
+- **"HomeKit Info"** section renamed to **"Override Camera Info"** with clarifying description
+- **`unbridge`** moved from device info to the HKSV section where it belongs
+- **`enabled`** moved to top of camera card
+- **`prebufferLength`** changed to a friendly dropdown (2s / 4s / 6s / 8s)
+- **`qualityProfile`** (encoder quality) is now conditional — only appears when a hardware encoder is selected
+- **`encoderOptions`** moved to Advanced / Debug
+- Global FFmpeg settings (`videoProcessor`, `probeOnStartup`, `probeTimeout`, `debugMotion`) consolidated into a single 🔧 Global FFmpeg section
+
+### 🗑️ Removed
+
+- `vcodec` field — legacy field no longer needed. The `encoder` dropdown automatically selects the correct codec
+- `resolutionMode`, `customWidth`, `customHeight` — replaced by `qualityPreset`
+- `maxWidth`, `maxHeight`, `maxBitrate`, `minBitrate` — replaced by `qualityPreset`
+- `mapvideo`, `mapaudio` — ISAPI-generated RTSP streams are well-formed; auto-mapping is always correct
+
+### 🔧 Code Cleanup
+
+- Removed `codecToEncoder` legacy vcodec mapping from platform.ts
+- Removed dead `audioProcess`, `returnProcess`, `socket` fields from `ActiveSession`
+- Removed unused `_hap` parameter from `RecordingDelegate`
+- Extracted `deriveVcodec()` helper method to eliminate duplication in delegate.ts
+
+
 ## [2.0.7] - 2026-03-25
 
 ### 🔒 Security

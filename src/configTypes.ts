@@ -6,6 +6,21 @@ import { PlatformConfig } from 'homebridge';
 export type StreamType = 'mainstream' | 'substream' | 'thirdstream';
 
 /**
+ * Hardware encoder types
+ */
+export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
+
+/**
+ * Quality profile for hardware encoders
+ */
+export type QualityProfile = '' | 'speed' | 'balanced' | 'quality';
+
+/**
+ * Quality preset — maps to fixed resolution + bitrate
+ */
+export type QualityPreset = '720p-standard' | '1080p-standard' | '1080p-hq';
+
+/**
  * Platform configuration interface
  */
 export interface HikvisionPlatformConfig extends PlatformConfig {
@@ -66,21 +81,6 @@ export interface CameraConfig {
 }
 
 /**
- * Hardware encoder types
- */
-export type EncoderType = 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
-
-/**
- * Quality profile for hardware encoders
- */
-export type QualityProfile = '' | 'speed' | 'balanced' | 'quality';
-
-/**
- * Resolution mode for handling HomeKit adaptive streaming
- */
-export type ResolutionMode = 'adaptive' | 'force-max' | 'force-custom';
-
-/**
  * Video configuration for a camera
  */
 export interface VideoConfig {
@@ -88,32 +88,25 @@ export interface VideoConfig {
   source?: string;
   stillImageSource?: string;
 
-  // Limits
+  // Quality preset (maps to maxWidth/maxHeight/maxBitrate at runtime)
+  qualityPreset?: QualityPreset;
+
+  // Limits (populated from qualityPreset at runtime)
   maxStreams?: number;
   maxWidth?: number;
   maxHeight?: number;
   maxFPS?: number;
   maxBitrate?: number;
-  minBitrate?: number;
-
-  // Resolution Override
-  resolutionMode?: ResolutionMode;  // How to handle HomeKit resolution requests
-  customWidth?: number;             // Used when resolutionMode = 'force-custom'
-  customHeight?: number;            // Used when resolutionMode = 'force-custom'
 
   // Codec and Hardware Acceleration
-  vcodec?: string;               // Auto-derived from encoder type
   encoder?: EncoderType;
-  qualityProfile?: QualityProfile; // Quality profile for hardware encoders
-  encoderOptions?: string;       // Custom encoder options
-  hwaccelDevice?: string;        // Hardware device path (/dev/dri/renderD128, etc.)
+  qualityProfile?: QualityProfile;
+  encoderOptions?: string;
+  hwaccelDevice?: string;
 
   // Audio
   audio?: boolean;
-
-  // Stream mapping
-  mapvideo?: string;
-  mapaudio?: string;
+  copyAudio?: boolean;
 
   // Filters
   videoFilter?: string;
@@ -128,9 +121,9 @@ export interface VideoConfig {
   debugReturn?: boolean;
 
   // HomeKit Secure Video (HKSV)
-  recording?: boolean;          // Enable HKSV recording
-  prebuffer?: boolean;          // Enable prebuffering for HKSV
-  prebufferLength?: number;     // Prebuffer duration in milliseconds (default: 4000)
+  recording?: boolean;
+  prebuffer?: boolean;
+  prebufferLength?: number;
 }
 
 /**

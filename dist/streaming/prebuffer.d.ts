@@ -1,5 +1,6 @@
 import { ChildProcess } from 'child_process';
 import { Server } from 'net';
+import EventEmitter from 'events';
 import { Logger } from 'homebridge';
 import { MP4Atom } from './hksvHelpers';
 export interface Mp4Session {
@@ -21,7 +22,7 @@ export declare const DEFAULT_PREBUFFER_DURATION = 15000;
  */
 export declare class PreBuffer {
     prebufferFmp4: PrebufferFmp4[];
-    events: any;
+    events: EventEmitter<[never]>;
     released: boolean;
     ftyp: MP4Atom;
     moov: MP4Atom;

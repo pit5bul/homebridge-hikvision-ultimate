@@ -17,6 +17,7 @@ export declare class StreamingDelegate implements CameraStreamingDelegate {
     handleStreamRequest(request: StreamingRequest, callback: StreamRequestCallback): void;
     private startStream;
     private buildFfmpegArgs;
+    private deriveVcodec;
     private stopStream;
     stopAllStreams(): void;
 }

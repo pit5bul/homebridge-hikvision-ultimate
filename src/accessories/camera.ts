@@ -52,7 +52,6 @@ export class CameraAccessory {
         cameraConfig.name || 'Camera',
         cameraConfig.videoConfig,
         this.api,
-        this.hap,
         videoProcessor,
       );
     }

@@ -13,6 +13,31 @@ export declare const HOMEKIT_MAX_WIDTH = 1920;
 export declare const HOMEKIT_MAX_HEIGHT = 1080;
 export declare const HOMEKIT_MAX_FPS = 30;
 /**
+ * Quality preset definitions
+ * Maps user-friendly presets to concrete video parameters
+ */
+export declare const QUALITY_PRESETS: {
+    readonly '720p-standard': {
+        readonly maxWidth: 1280;
+        readonly maxHeight: 720;
+        readonly maxBitrate: 1500;
+    };
+    readonly '1080p-standard': {
+        readonly maxWidth: 1920;
+        readonly maxHeight: 1080;
+        readonly maxBitrate: 2000;
+    };
+    readonly '1080p-hq': {
+        readonly maxWidth: 1920;
+        readonly maxHeight: 1080;
+        readonly maxBitrate: 4000;
+    };
+};
+/**
+ * Default quality preset
+ */
+export declare const DEFAULT_QUALITY_PRESET = "1080p-standard";
+/**
  * Default values for video configuration
  */
 export declare const DEFAULT_VIDEO_CONFIG: {
@@ -20,12 +45,10 @@ export declare const DEFAULT_VIDEO_CONFIG: {
     maxWidth: number;
     maxHeight: number;
     maxBitrate: number;
-    minBitrate: number;
     encoder: "software";
     audio: boolean;
+    copyAudio: boolean;
     packetSize: number;
-    mapvideo: undefined;
-    mapaudio: undefined;
     debug: boolean;
     debugReturn: boolean;
     vflip: boolean;
@@ -55,7 +78,6 @@ export declare const DEFAULT_CAMERA_CONFIG: {
 };
 /**
  * Stream type to RTSP channel suffix mapping
- * Channel format: {channelId}01 for mainstream, {channelId}02 for substream, etc.
  */
 export declare const STREAM_TYPE_SUFFIX: {
     mainstream: string;

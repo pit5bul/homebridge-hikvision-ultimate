@@ -1,4 +1,4 @@
-import { API, CameraRecordingDelegate, CameraRecordingConfiguration, HAP, HDSProtocolSpecificErrorReason, RecordingPacket, Logger } from 'homebridge';
+import { API, CameraRecordingDelegate, CameraRecordingConfiguration, HDSProtocolSpecificErrorReason, RecordingPacket, Logger } from 'homebridge';
 import { VideoConfig } from '../configTypes';
 /**
  * RecordingDelegate handles HomeKit Secure Video (HKSV) recording
@@ -15,7 +15,7 @@ export declare class RecordingDelegate implements CameraRecordingDelegate {
     private currentRecordingConfiguration?;
     private activeFFmpegProcesses;
     private streamAbortControllers;
-    constructor(log: Logger, cameraName: string, videoConfig: VideoConfig, api: API, _hap: HAP, videoProcessor: string);
+    constructor(log: Logger, cameraName: string, videoConfig: VideoConfig, api: API, videoProcessor: string);
     /**
      * Called when user enables/disables recording in Home app
      */

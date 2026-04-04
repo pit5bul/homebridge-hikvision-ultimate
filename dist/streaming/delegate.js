@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StreamingDelegate = void 0;
-const homebridge_1 = require("homebridge");
 const child_process_1 = require("child_process");
 const settings_1 = require("../settings");
 const pick_port_1 = require("pick-port");
@@ -28,29 +27,6 @@ class StreamingDelegate {
         let requestedHeight = request.height;
         const maxWidth = Math.min(this.videoConfig.maxWidth || settings_1.HOMEKIT_MAX_WIDTH, settings_1.HOMEKIT_MAX_WIDTH);
         const maxHeight = Math.min(this.videoConfig.maxHeight || settings_1.HOMEKIT_MAX_HEIGHT, settings_1.HOMEKIT_MAX_HEIGHT);
-        // Handle resolution mode - override HomeKit's request if configured
-        const resolutionMode = this.videoConfig.resolutionMode || 'adaptive';
-        if (!isSnapshot && resolutionMode !== 'adaptive') {
-            if (resolutionMode === 'force-max') {
-                // Force maximum resolution
-                this.log.info(`[Resolution] Force-Max mode: Using ${maxWidth}x${maxHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
-                requestedWidth = maxWidth;
-                requestedHeight = maxHeight;
-            }
-            else if (resolutionMode === 'force-custom') {
-                // Force custom resolution
-                const customWidth = this.videoConfig.customWidth;
-                const customHeight = this.videoConfig.customHeight;
-                if (customWidth && customHeight) {
-                    this.log.info(`[Resolution] Force-Custom mode: Using ${customWidth}x${customHeight} (HomeKit requested ${request.width}x${request.height})`, this.cameraConfig.name);
-                    requestedWidth = customWidth;
-                    requestedHeight = customHeight;
-                }
-                else {
-                    this.log.error(`[Resolution] Force-Custom mode selected but customWidth/customHeight not set! Falling back to adaptive.`, this.cameraConfig.name);
-                }
-            }
-        }
         if (requestedWidth > maxWidth)
             requestedWidth = maxWidth;
         if (requestedHeight > maxHeight)
@@ -201,16 +177,16 @@ class StreamingDelegate {
     }
     handleStreamRequest(request, callback) {
         switch (request.type) {
-            case homebridge_1.StreamRequestTypes.START:
+            case "start" /* StreamRequestTypes.START */:
                 this.startStream(request, callback);
                 break;
-            case homebridge_1.StreamRequestTypes.RECONFIGURE:
+            case "reconfigure" /* StreamRequestTypes.RECONFIGURE */:
                 if ('video' in request) {
                     this.log.debug(`Reconfigure ignored: ${request.video.width}x${request.video.height}`, this.cameraConfig.name);
                 }
                 callback();
                 break;
-            case homebridge_1.StreamRequestTypes.STOP:
+            case "stop" /* StreamRequestTypes.STOP */:
                 this.stopStream(request.sessionID);
                 callback();
                 break;
@@ -234,29 +210,10 @@ class StreamingDelegate {
         let bitrate = request.video.max_bit_rate;
         if (this.videoConfig.maxBitrate && bitrate > this.videoConfig.maxBitrate)
             bitrate = this.videoConfig.maxBitrate;
-        if (this.videoConfig.minBitrate && bitrate < this.videoConfig.minBitrate)
-            bitrate = this.videoConfig.minBitrate;
         this.log.info(`Starting stream: ${resolution.width}x${resolution.height} ${bitrate}kbps`, this.cameraConfig.name);
         // Log encoder and pipeline being used
         const encoder = this.videoConfig.encoder || 'software';
-        // Derive vcodec same way buildFfmpegArgs does
-        let vcodec = this.videoConfig.vcodec;
-        if (!vcodec) {
-            if (encoder === 'vaapi')
-                vcodec = 'h264_vaapi';
-            else if (encoder === 'amf')
-                vcodec = 'h264_amf';
-            else if (encoder === 'quicksync')
-                vcodec = 'h264_qsv';
-            else if (encoder === 'nvenc')
-                vcodec = 'h264_nvenc';
-            else if (encoder === 'videotoolbox')
-                vcodec = 'h264_videotoolbox';
-            else if (encoder === 'v4l2')
-                vcodec = 'h264_v4l2m2m';
-            else
-                vcodec = 'libx264';
-        }
+        const vcodec = this.deriveVcodec(encoder);
         if (encoder === 'software') {
             this.log.info(`Video encoder: ${vcodec} (software)`, this.cameraConfig.name);
         }
@@ -284,8 +241,8 @@ class StreamingDelegate {
         const ffmpegArgs = this.buildFfmpegArgs(source, sessionInfo, resolution, bitrate, request);
         this.log.debug(`FFmpeg command: ${this.videoProcessor} ${ffmpegArgs}`, this.cameraConfig.name);
         if (this.videoConfig.audio) {
-            const audioCodecName = 'audio' in request && request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS ? 'OPUS' :
-                'audio' in request && request.audio.codec === homebridge_1.AudioStreamingCodecType.AAC_ELD ? 'AAC-eld' : 'unknown';
+            const audioCodecName = 'audio' in request && request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */ ? 'OPUS' :
+                'audio' in request && request.audio.codec === "AAC-eld" /* AudioStreamingCodecType.AAC_ELD */ ? 'AAC-eld' : 'unknown';
             this.log.info(`Audio enabled: ${audioCodecName}`, this.cameraConfig.name);
         }
         // Split the command string into array for spawn
@@ -308,27 +265,8 @@ class StreamingDelegate {
         callback();
     }
     buildFfmpegArgs(source, sessionInfo, resolution, bitrate, request) {
-        // Build FFmpeg command as a single string, exactly like homebridge-camera-ffmpeg
         const encoder = this.videoConfig.encoder || 'software';
-        // Derive vcodec from encoder if not explicitly set
-        let vcodec = this.videoConfig.vcodec;
-        if (!vcodec) {
-            // Auto-select vcodec based on encoder
-            if (encoder === 'vaapi')
-                vcodec = 'h264_vaapi';
-            else if (encoder === 'amf')
-                vcodec = 'h264_amf';
-            else if (encoder === 'quicksync')
-                vcodec = 'h264_qsv';
-            else if (encoder === 'nvenc')
-                vcodec = 'h264_nvenc';
-            else if (encoder === 'videotoolbox')
-                vcodec = 'h264_videotoolbox';
-            else if (encoder === 'v4l2')
-                vcodec = 'h264_v4l2m2m';
-            else
-                vcodec = 'libx264'; // software default
-        }
+        const vcodec = this.deriveVcodec(encoder);
         const mtu = this.videoConfig.packetSize || 1316;
         let encoderOptions = this.videoConfig.encoderOptions;
         // Quality profile for hardware encoders - OPTIONAL
@@ -468,23 +406,27 @@ class StreamingDelegate {
         const colorRange = (isHardwareEncoder && encoder !== 'vaapi') ? ' -color_range mpeg' : ''; // Skip for VAAPI (conflicts with scale_vaapi)
         const gopParams = gopSize > 0 ? ` -g ${gopSize}` : ''; // Only add if quality profile set
         const bframeParams = bframes >= 0 ? ` -bf ${bframes}` : ''; // Only add if quality profile set (-1 = skip)
-        ffmpegArgs += `${this.videoConfig.mapvideo ? ` -map ${this.videoConfig.mapvideo}` : ' -an -sn -dn'} -codec:v ${vcodec}${pixFmt}${colorRange}${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''}${encoderOptions ? ` ${encoderOptions}` : ''}${bframeParams}${gopParams}${bitrate > 0 ? ` -b:v ${bitrate}k` : ''} -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
+        ffmpegArgs += `${' -an -sn -dn'} -codec:v ${vcodec}${pixFmt}${colorRange}${resolution.videoFilter ? ` -filter:v ${resolution.videoFilter}` : ''}${encoderOptions ? ` ${encoderOptions}` : ''}${bframeParams}${gopParams}${bitrate > 0 ? ` -b:v ${bitrate}k` : ''} -payload_type ${'pt' in request.video ? request.video.pt : 99}`;
         // Video Stream
         ffmpegArgs += ` -ssrc ${sessionInfo.videoSSRC} -f rtp`
             + ` -srtp_out_suite AES_CM_128_HMAC_SHA1_80`
             + ` -srtp_out_params ${sessionInfo.videoSRTP.toString('base64')} srtp://${sessionInfo.address}:${sessionInfo.videoPort}?rtcpport=${sessionInfo.videoPort}&pkt_size=${mtu}`;
         // Audio (if enabled)
         if (this.videoConfig.audio && 'audio' in request) {
-            if (request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS || request.audio.codec === homebridge_1.AudioStreamingCodecType.AAC_ELD) {
+            if (request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */ || request.audio.codec === "AAC-eld" /* AudioStreamingCodecType.AAC_ELD */) {
+                // Use copy if enabled and codec is compatible, otherwise transcode
+                const useAudioCopy = this.videoConfig.copyAudio === true;
                 ffmpegArgs // Audio
-                    += `${(this.videoConfig.mapaudio ? ` -map ${this.videoConfig.mapaudio}` : ' -vn -sn -dn')
-                        + (request.audio.codec === homebridge_1.AudioStreamingCodecType.OPUS
-                            ? ' -codec:a libopus'
-                                + ' -application lowdelay'
-                            : ' -codec:a libfdk_aac'
-                                + ' -profile:a aac_eld')} -flags +global_header`
+                    += `${' -vn -sn -dn'
+                        + (useAudioCopy
+                            ? ' -codec:a copy'
+                            : request.audio.codec === "OPUS" /* AudioStreamingCodecType.OPUS */
+                                ? ' -codec:a libopus'
+                                    + ' -application lowdelay'
+                                : ' -codec:a libfdk_aac'
+                                    + ' -profile:a aac_eld')} -flags +global_header`
                         + ` -f null`
-                        + ` -ar ${request.audio.sample_rate}k`
+                        + (useAudioCopy ? '' : ` -ar ${request.audio.sample_rate}k`)
                         + ` -b:a ${request.audio.max_bit_rate}k`
                         + ` -ac ${request.audio.channel} -payload_type ${'pt' in request.audio ? request.audio.pt : 110}`;
                 ffmpegArgs // Audio Stream
@@ -499,6 +441,21 @@ class StreamingDelegate {
         ffmpegArgs += ` -loglevel level${this.videoConfig.debug ? '+verbose' : ''} -progress pipe:1`;
         return ffmpegArgs;
     }
+    deriveVcodec(encoder) {
+        if (encoder === 'vaapi')
+            return 'h264_vaapi';
+        if (encoder === 'amf')
+            return 'h264_amf';
+        if (encoder === 'quicksync')
+            return 'h264_qsv';
+        if (encoder === 'nvenc')
+            return 'h264_nvenc';
+        if (encoder === 'videotoolbox')
+            return 'h264_videotoolbox';
+        if (encoder === 'v4l2')
+            return 'h264_v4l2m2m';
+        return 'libx264';
+    }
     stopStream(sessionID) {
         const session = this.activeSessions.get(sessionID);
         if (!session)
@@ -506,12 +463,6 @@ class StreamingDelegate {
         this.log.info('Stopping stream', this.cameraConfig.name);
         if (session.videoProcess)
             session.videoProcess.kill('SIGKILL');
-        if (session.audioProcess)
-            session.audioProcess.kill('SIGKILL');
-        if (session.returnProcess)
-            session.returnProcess.kill('SIGKILL');
-        if (session.socket)
-            session.socket.close();
         if (session.timeout)
             clearTimeout(session.timeout);
         this.activeSessions.delete(sessionID);

@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RecordingDelegate = void 0;
 const child_process_1 = require("child_process");
-const homebridge_1 = require("homebridge");
 const prebuffer_1 = require("./prebuffer");
 const hksvHelpers_1 = require("./hksvHelpers");
 /**
@@ -20,7 +19,7 @@ class RecordingDelegate {
     currentRecordingConfiguration;
     activeFFmpegProcesses = new Map();
     streamAbortControllers = new Map();
-    constructor(log, cameraName, videoConfig, api, _hap, videoProcessor) {
+    constructor(log, cameraName, videoConfig, api, videoProcessor) {
         this.log = log;
         this.cameraName = cameraName;
         this.videoConfig = videoConfig;
@@ -188,20 +187,20 @@ class RecordingDelegate {
         // Audio codec parameters (if audio enabled)
         const audioArgs = [
             '-acodec', 'aac',
-            '-profile:a', configuration.audioCodec.type === homebridge_1.AudioRecordingCodecType.AAC_LC ? 'aac_low' : 'aac_eld',
+            '-profile:a', configuration.audioCodec.type === 0 /* AudioRecordingCodecType.AAC_LC */ ? 'aac_low' : 'aac_eld',
             '-ar', '32000',
             '-b:a', `${configuration.audioCodec.bitrate}k`,
             '-ac', `${configuration.audioCodec.audioChannels}`,
         ];
         // H.264 profile and level from configuration
-        const profile = configuration.videoCodec.parameters.profile === homebridge_1.H264Profile.HIGH
+        const profile = configuration.videoCodec.parameters.profile === 2 /* H264Profile.HIGH */
             ? 'high'
-            : configuration.videoCodec.parameters.profile === homebridge_1.H264Profile.MAIN
+            : configuration.videoCodec.parameters.profile === 1 /* H264Profile.MAIN */
                 ? 'main'
                 : 'baseline';
-        const level = configuration.videoCodec.parameters.level === homebridge_1.H264Level.LEVEL4_0
+        const level = configuration.videoCodec.parameters.level === 2 /* H264Level.LEVEL4_0 */
             ? '4.0'
-            : configuration.videoCodec.parameters.level === homebridge_1.H264Level.LEVEL3_2
+            : configuration.videoCodec.parameters.level === 1 /* H264Level.LEVEL3_2 */
                 ? '3.2'
                 : '3.1';
         // HKSV-compatible H.264 parameters for recording

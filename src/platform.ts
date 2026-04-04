@@ -18,6 +18,8 @@ import {
   DEFAULT_PLATFORM_CONFIG,
   DEFAULT_CAMERA_CONFIG,
   DEFAULT_VIDEO_CONFIG,
+  QUALITY_PRESETS,
+  DEFAULT_QUALITY_PRESET,
 } from './settings';
 import { HikvisionApi } from './hikvision/api';
 import { HikvisionDiscovery } from './hikvision/discovery';
@@ -367,38 +369,18 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         ...(camera.videoConfig || {}),
       };
       
-      // Determine encoder type - support both new 'encoder' field and legacy 'vcodec' field
-      let encoderType: 'software' | 'vaapi' | 'quicksync' | 'nvenc' | 'amf' | 'videotoolbox' | 'v4l2';
-      let vcodec: string;
-      
-      if (camera.videoConfig.encoder) {
-        // New way: use encoder field directly
-        encoderType = camera.videoConfig.encoder;
-        // vcodec will be auto-derived in delegate.ts
-      } else if (camera.videoConfig.vcodec) {
-        // Legacy way: map vcodec to encoder type
-        vcodec = camera.videoConfig.vcodec;
-        const codecToEncoder: Record<string, typeof encoderType> = {
-          'libx264': 'software',
-          'h264_nvenc': 'nvenc',
-          'h264_qsv': 'quicksync',
-          'h264_vaapi': 'vaapi',
-          'h264_amf': 'amf',
-          'h264_videotoolbox': 'videotoolbox',
-          'h264_v4l2m2m': 'v4l2',
-        };
-        encoderType = codecToEncoder[vcodec] || 'software';
-        camera.videoConfig.encoder = encoderType;
-      } else {
-        // Default to software
-        encoderType = 'software';
-        camera.videoConfig.encoder = encoderType;
-      }
-      
-      // No longer using ENCODER_PRESETS - delegate.ts auto-configures everything
-      
-      // Just log what encoder type is being used
+      // Resolve encoder type
+      const encoderType = camera.videoConfig.encoder || 'software';
+      camera.videoConfig.encoder = encoderType;
       this.log.info(`Camera ${camera.name} using ${encoderType} encoder`);
+
+      // Resolve qualityPreset → maxWidth / maxHeight / maxBitrate
+      const preset = camera.videoConfig.qualityPreset || DEFAULT_QUALITY_PRESET;
+      const presetValues = QUALITY_PRESETS[preset] || QUALITY_PRESETS[DEFAULT_QUALITY_PRESET];
+      camera.videoConfig.maxWidth = presetValues.maxWidth;
+      camera.videoConfig.maxHeight = presetValues.maxHeight;
+      camera.videoConfig.maxBitrate = presetValues.maxBitrate;
+      this.log.info(`Camera ${camera.name} quality: ${preset} (${presetValues.maxWidth}x${presetValues.maxHeight} @ ${presetValues.maxBitrate}kbps)`);
       
       // Only set source if not already set
       if (!camera.videoConfig.source) {
@@ -412,8 +394,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         this.log.info(`Generated snapshot source for ${camera.name}: ${camera.videoConfig.stillImageSource}`);
       }
       
-      // Log applied configuration for debugging
-      this.log.info(`Camera ${camera.name} config: ${camera.videoConfig.maxWidth}x${camera.videoConfig.maxHeight}, ${camera.videoConfig.maxBitrate}kbps`);
+
     }
 
     const cameraAccessory = new CameraAccessory(this.api, accessory, camera, this.ffmpegPath, this.log);
