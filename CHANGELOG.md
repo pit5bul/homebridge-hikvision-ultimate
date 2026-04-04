@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-04-04
+
+### 🔧 Fixed
+
+- **RECONFIGURE handler** — HomeKit uses adaptive streaming: it starts every stream at a low resolution (640x360) then sends a RECONFIGURE to upgrade. The plugin was silently ignoring RECONFIGURE requests, causing streams to stay permanently stuck at the initial low quality. Fixed by properly restarting the stream at the upgraded resolution when HomeKit requests it.
+
 ## [2.1.0] - 2026-04-04
 
 ### ✨ Added

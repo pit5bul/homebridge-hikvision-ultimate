@@ -38,6 +38,7 @@ interface SessionInfo {
 
 interface ActiveSession {
   sessionInfo: SessionInfo;
+  lastRequest: StreamingRequest;
   videoProcess?: ChildProcess;
   timeout?: NodeJS.Timeout;
 }
@@ -237,12 +238,19 @@ export class StreamingDelegate implements CameraStreamingDelegate {
       case StreamRequestTypes.START:
         this.startStream(request, callback);
         break;
-      case StreamRequestTypes.RECONFIGURE:
-        if ('video' in request) {
-          this.log.debug(`Reconfigure ignored: ${request.video.width}x${request.video.height}`, this.cameraConfig.name);
-        }
-        callback();
+      case StreamRequestTypes.RECONFIGURE: {
+        if (!('video' in request)) { callback(); break; }
+        const active = this.activeSessions.get(request.sessionID);
+        if (!active) { callback(); break; }
+        this.log.info(`Reconfigure: ${request.video.width}x${request.video.height} ${request.video.max_bit_rate}kbps`, this.cameraConfig.name);
+        // Kill existing process and restart at new resolution using stored session info
+        if (active.videoProcess) active.videoProcess.kill('SIGKILL');
+        if (active.timeout) clearTimeout(active.timeout);
+        this.activeSessions.delete(request.sessionID);
+        this.pendingSessions.set(request.sessionID, active.sessionInfo);
+        this.startStream(request, callback);
         break;
+      }
       case StreamRequestTypes.STOP:
         this.stopStream(request.sessionID);
         callback();
@@ -311,7 +319,7 @@ export class StreamingDelegate implements CameraStreamingDelegate {
     // Split the command string into array for spawn
     const args = ffmpegArgs.split(/\s+/).filter(arg => arg.length > 0);
     const ffmpeg = spawn(this.videoProcessor, args, { env: process.env });
-    const activeSession: ActiveSession = { sessionInfo, videoProcess: ffmpeg };
+    const activeSession: ActiveSession = { sessionInfo, lastRequest: request, videoProcess: ffmpeg };
     this.activeSessions.set(request.sessionID, activeSession);
 
     ffmpeg.stderr?.on('data', (data: Buffer) => {
