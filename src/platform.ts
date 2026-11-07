@@ -10,6 +10,7 @@ import {
 import {
   HikvisionPlatformConfig,
   CameraConfig,
+  DiscoveredChannel,
   StreamType,
 } from './configTypes';
 import {
@@ -203,7 +204,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
 
   private async mergeDiscoveredCameras(
     existingCameras: CameraConfig[],
-    discoveredChannels: { id: number; name: string; inputPort: number; enabled: boolean; deviceInfo?: { manufacturer?: string; model?: string; serialNumber?: string; firmwareVersion?: string } }[],
+    discoveredChannels: DiscoveredChannel[],
   ): Promise<CameraConfig[]> {
     const result: CameraConfig[] = [];
     const existingByChannelId = new Map<number, CameraConfig>();
@@ -216,6 +217,9 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
       const existing = existingByChannelId.get(channel.id);
       if (existing) {
         this.log.debug(`Keeping existing config for channel ${channel.id}: ${existing.name}`);
+        if (channel.standalone && !existing.standalone) {
+          existing.standalone = true;
+        }
         
         // Auto-populate camera info if available and not already set
         if (channel.deviceInfo) {
@@ -246,7 +250,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         existingByChannelId.delete(channel.id);
       } else {
         const streamType = this.platformConfig.streamType || DEFAULT_PLATFORM_CONFIG.streamType;
-        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType, channel.deviceInfo);
+        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType, channel.deviceInfo, channel.standalone);
         this.log.info(`Discovered new camera: ${newCamera.name} (Channel ${channel.id})`);
         result.push(newCamera);
       }
@@ -265,6 +269,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     name: string, 
     streamType: StreamType,
     deviceInfo?: { manufacturer?: string; model?: string; serialNumber?: string; firmwareVersion?: string },
+    standalone?: boolean,
   ): CameraConfig {
     if (!this.discovery) throw new Error('Discovery not initialized');
 
@@ -280,6 +285,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     return {
       channelId,
       name,
+      ...(standalone ? { standalone: true } : {}),
       manufacturer,
       model,
       serialNumber,
@@ -344,8 +350,20 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     }
   }
 
+  /**
+   * Accessory UUID. NVR cameras keep the historical `plugin-channelId` seed so existing
+   * HomeKit accessories are preserved; standalone cameras are all channel 1, so the host
+   * is part of their seed to allow several standalone cameras side by side.
+   */
+  private cameraUuid(camera: CameraConfig): string {
+    const seed = camera.standalone
+      ? `${PLUGIN_NAME}-${this.platformConfig.host}-${camera.channelId}`
+      : `${PLUGIN_NAME}-${camera.channelId}`;
+    return this.api.hap.uuid.generate(seed);
+  }
+
   private async createCameraAccessory(camera: CameraConfig): Promise<void> {
-    const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}-${camera.channelId}`);
+    const uuid = this.cameraUuid(camera);
     let accessory = this.accessories.get(uuid);
     let isNew = false;
 
@@ -414,7 +432,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     for (const camera of cameras) {
       // Only include cameras with valid name and channelId
       if (camera.enabled !== false && camera.name && camera.channelId !== undefined && camera.channelId !== null) {
-        const uuid = this.api.hap.uuid.generate(`${PLUGIN_NAME}-${camera.channelId}`);
+        const uuid = this.cameraUuid(camera);
         validUUIDs.add(uuid);
       }
     }
@@ -468,9 +486,14 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
       
       // Find and update our platform
       if (config.platforms) {
-        const platformIndex = config.platforms.findIndex(
-          (p: any) => p.platform === PLATFORM_NAME || p.name === this.platformConfig.name
+        let platformIndex = config.platforms.findIndex(
+          (p: any) => p.platform === PLATFORM_NAME && p.host === this.platformConfig.host,
         );
+        if (platformIndex === -1) {
+          platformIndex = config.platforms.findIndex(
+            (p: any) => p.platform === PLATFORM_NAME || p.name === this.platformConfig.name,
+          );
+        }
         
         if (platformIndex !== -1) {
           // Update cameras while preserving other settings

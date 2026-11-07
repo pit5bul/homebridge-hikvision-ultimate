@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ✨ Added
+
+- **Standalone IP camera support** — when `host` is a Hikvision IP camera rather than an NVR (`deviceType` `IPCamera`, `IPDome`, `IPZoom` or `PTZ` in `/ISAPI/System/deviceInfo`), discovery exposes it as a single camera on channel 1 instead of failing on `/ISAPI/ContentMgmt/InputProxy/channels` (403/404 on cameras). HKSV, motion events and snapshots work unchanged.
+
+### 🔧 Fixed
+
+- **Several platform entries** — `saveConfig` now writes discovered cameras back to the platform entry with the same `host`, instead of always the first `HikvisionUltimate` entry.
+- **Accessory UUID collisions between standalone cameras** — standalone cameras (all on channel 1) include the host in their UUID seed. NVR cameras keep the previous seed, so existing HomeKit accessories are preserved.
+
 ## [2.1.4] - 2026-04-05
 
 ### 🎨 Changed

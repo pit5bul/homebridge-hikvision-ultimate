@@ -32,6 +32,7 @@ interface InputProxyChannel {
 interface DeviceInfoResponse {
   DeviceInfo?: {
     deviceName?: string;
+    deviceType?: string;
     model?: string;
     serialNumber?: string;
     firmwareVersion?: string;
@@ -40,7 +41,14 @@ interface DeviceInfoResponse {
 }
 
 /**
- * Discover cameras from Hikvision NVR via ISAPI
+ * ``deviceType`` values reported by standalone Hikvision IP cameras in /ISAPI/System/deviceInfo.
+ * These devices have no /ISAPI/ContentMgmt/InputProxy/channels endpoint (403/404): their only
+ * video input is channel 1 (RTSP /Streaming/Channels/101, 102...).
+ */
+const STANDALONE_DEVICE_TYPE = /^(IPCamera|IPDome|IPZoom|PTZ)/i;
+
+/**
+ * Discover cameras from a Hikvision NVR, or a standalone Hikvision IP camera, via ISAPI
  */
 export class HikvisionDiscovery {
   constructor(
@@ -101,6 +109,11 @@ export class HikvisionDiscovery {
    * Discover all input channels from NVR
    */
   async discoverChannels(): Promise<DiscoveredChannel[]> {
+    const standalone = await this.discoverStandaloneCamera();
+    if (standalone) {
+      return [standalone];
+    }
+
     try {
       const response = await this.api.get<ChannelsResponse>('/ISAPI/ContentMgmt/InputProxy/channels');
       const channelList = response.InputProxyChannelList?.InputProxyChannel;
@@ -127,6 +140,37 @@ export class HikvisionDiscovery {
       this.log.error(`Failed to discover channels: ${err}`);
       throw err;
     }
+  }
+
+  /**
+   * A standalone IP camera exposes itself as a single channel (id 1).
+   * Returns undefined for NVRs/DVRs, or when the device type cannot be read.
+   */
+  private async discoverStandaloneCamera(): Promise<DiscoveredChannel | undefined> {
+    let info: DeviceInfoResponse['DeviceInfo'];
+    try {
+      info = (await this.api.get<DeviceInfoResponse>('/ISAPI/System/deviceInfo')).DeviceInfo;
+    } catch {
+      return undefined;
+    }
+    if (!info?.deviceType || !STANDALONE_DEVICE_TYPE.test(info.deviceType)) {
+      return undefined;
+    }
+
+    this.log.info(`📷 Standalone ${info.deviceType} detected (${info.model || 'unknown model'}) - exposing it as channel 1`);
+    return {
+      id: 1,
+      name: info.deviceName || 'Camera',
+      inputPort: 1,
+      enabled: true,
+      standalone: true,
+      deviceInfo: {
+        manufacturer: 'Hikvision',
+        model: info.model,
+        serialNumber: info.serialNumber,
+        firmwareVersion: info.firmwareVersion,
+      },
+    };
   }
 
   /**

@@ -22,6 +22,7 @@ Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, 
 ### 🔍 Automatic Discovery
 - Zero-configuration camera setup — just provide NVR IP, username and password
 - Automatically detects all cameras connected to your Hikvision NVR via ISAPI
+- Also works with **standalone Hikvision IP cameras** (no NVR): the camera is detected from its `deviceType` and exposed as channel 1
 - Auto-generates RTSP URLs and snapshot sources for each camera
 - Saves discovered cameras to config.json automatically
 
@@ -95,6 +96,33 @@ That's it. No manual camera configuration required.
   "password": "your-password"
 }
 ```
+
+### Standalone IP cameras (no NVR)
+
+Point `host` at the camera itself. The plugin reads `/ISAPI/System/deviceInfo`; when the device reports itself as an IP camera (`IPCamera`, `IPDome`, `IPZoom`, `PTZ`), it is exposed as a single camera on channel 1 instead of querying the NVR channel list (which standalone cameras answer with 403/404).
+
+For several standalone cameras, add one platform entry per camera and run each entry as its own **child bridge** (Homebridge UI → plugin → Bridge Settings, or a `_bridge` block). Homebridge does not allow the same dynamic platform twice on the main bridge.
+
+```json
+{
+  "platform": "HikvisionUltimate",
+  "name": "Front Door",
+  "host": "192.168.1.64",
+  "username": "admin",
+  "password": "your-password",
+  "_bridge": { "username": "0E:12:34:56:78:9A", "port": 45091 }
+},
+{
+  "platform": "HikvisionUltimate",
+  "name": "Garden",
+  "host": "192.168.1.65",
+  "username": "admin",
+  "password": "your-password",
+  "_bridge": { "username": "0E:12:34:56:78:9B", "port": 45092 }
+}
+```
+
+Discovered standalone cameras are saved with `"standalone": true`. Their accessory UUID also includes the host, so cameras that all sit on channel 1 do not collide. NVR setups keep their existing UUIDs.
 
 ### Full Platform Options
 
@@ -246,6 +274,7 @@ Enable `debugMotion: true` in Global FFmpeg settings to log all raw events — u
 
 ### Cameras not discovered
 - Verify NVR credentials are correct
+- For a standalone camera, check the log for `Standalone ... detected`; if the camera reports an unusual `deviceType`, open an issue with the value from `http://<camera>/ISAPI/System/deviceInfo`
 - Check the NVR HTTP port (try `8080` if `80` doesn't work)
 - Enable `forceDiscovery` and restart
 

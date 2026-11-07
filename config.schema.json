@@ -19,11 +19,11 @@
         "description": "Name shown in Homebridge logs."
       },
       "host": {
-        "title": "NVR IP / Hostname",
+        "title": "NVR / Camera IP / Hostname",
         "type": "string",
         "format": "hostname",
         "placeholder": "192.168.1.100",
-        "description": "IP address or hostname of your Hikvision NVR."
+        "description": "IP address or hostname of your Hikvision NVR, or of a standalone Hikvision IP camera."
       },
       "port": {
         "title": "HTTP Port",
@@ -133,6 +133,11 @@
               "type": "integer",
               "minimum": 1,
               "description": "NVR channel number for this camera. Auto-populated by discovery."
+            },
+            "standalone": {
+              "title": "Standalone IP camera",
+              "type": "boolean",
+              "description": "Set by discovery when the host is a standalone IP camera (not an NVR). Keeps the accessory UUID stable; do not change it by hand."
             },
             "name": {
               "title": "Camera Name",

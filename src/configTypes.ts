@@ -78,6 +78,11 @@ export interface CameraConfig {
 
   // Detected info (read-only, populated by discovery/probe)
   detected?: DetectedStreamInfo;
+
+  // Set by discovery when the host is a standalone IP camera rather than an NVR.
+  // Standalone cameras all sit on channel 1, so their accessory UUID also includes
+  // the host to keep several standalone cameras apart.
+  standalone?: boolean;
 }
 
 /**
@@ -150,6 +155,7 @@ export interface DiscoveredChannel {
   name: string;
   inputPort: number;
   enabled: boolean;
+  standalone?: boolean;
   resolutions?: string[];
   deviceInfo?: {
     manufacturer?: string;
