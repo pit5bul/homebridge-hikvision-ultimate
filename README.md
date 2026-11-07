@@ -6,7 +6,7 @@
 
 > **Official Homebridge Plugin** — listed in the [Homebridge Plugin Repository](https://www.npmjs.com/package/homebridge-hikvision-ultimate) and verified by the Homebridge team.
 
-Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, motion detection, and hardware-accelerated streaming.
+Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, motion detection, doorbell, and hardware-accelerated streaming.
 
 ## What's New in v2.2.0
 
@@ -38,6 +38,12 @@ Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, 
 - Native Hikvision motion detection — no video analysis needed
 - Supports VMD, line crossing, intrusion, region entrance/exit, tamper events
 - Configurable motion timeout per camera
+
+### 🔔 Doorbell, light, siren and strobe (experimental, opt-in)
+- HomeKit doorbell for Hikvision video intercom door stations
+- White supplement light as a HomeKit light with brightness
+- Siren and strobe switches with automatic switch-off
+- See [Doorbell and deterrence](#doorbell-and-deterrence-experimental) for requirements and limits
 
 ### 🚀 Hardware Acceleration
 - **VAAPI** — Intel/AMD GPUs on Linux (full GPU pipeline: decode→scale→encode)
