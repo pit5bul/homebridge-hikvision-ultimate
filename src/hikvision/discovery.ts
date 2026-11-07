@@ -153,8 +153,11 @@ export class HikvisionDiscovery {
     } catch {
       return undefined;
     }
-    if (!info?.deviceType || !STANDALONE_DEVICE_TYPE.test(info.deviceType)) {
+    if (!info) {
       return undefined;
+    }
+    if (!info.deviceType || !STANDALONE_DEVICE_TYPE.test(info.deviceType)) {
+      return this.discoverDoorStation(info);
     }
 
     this.log.info(`📷 Standalone ${info.deviceType} detected (${info.model || 'unknown model'}) - exposing it as channel 1`);
@@ -164,6 +167,38 @@ export class HikvisionDiscovery {
       inputPort: 1,
       enabled: true,
       standalone: true,
+      deviceInfo: {
+        manufacturer: 'Hikvision',
+        model: info.model,
+        serialNumber: info.serialNumber,
+        firmwareVersion: info.firmwareVersion,
+      },
+    };
+  }
+
+  /**
+   * A video intercom door station is not in the camera device type list, but it answers
+   * /ISAPI/VideoIntercom/callStatus. It is exposed as one camera with the doorbell enabled.
+   * Returns undefined for anything that does not answer call status (NVRs, DVRs, other devices).
+   */
+  private async discoverDoorStation(info: NonNullable<DeviceInfoResponse['DeviceInfo']>): Promise<DiscoveredChannel | undefined> {
+    try {
+      const caps = await this.api.getJson<{ CallStatus?: unknown }>('/ISAPI/VideoIntercom/callStatus/capabilities?format=json');
+      if (!caps || !caps.CallStatus) {
+        return undefined;
+      }
+    } catch {
+      return undefined;
+    }
+
+    this.log.info(`🔔 Video intercom door station detected (deviceType "${info.deviceType || 'unknown'}", ${info.model || 'unknown model'}) - exposing it as channel 1 with the doorbell enabled`);
+    return {
+      id: 1,
+      name: info.deviceName || 'Door Station',
+      inputPort: 1,
+      enabled: true,
+      standalone: true,
+      doorbell: true,
       deviceInfo: {
         manufacturer: 'Hikvision',
         model: info.model,

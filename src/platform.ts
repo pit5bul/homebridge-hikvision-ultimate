@@ -220,6 +220,9 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         if (channel.standalone && !existing.standalone) {
           existing.standalone = true;
         }
+        if (channel.doorbell && existing.doorbell === undefined) {
+          existing.doorbell = true;
+        }
         
         // Auto-populate camera info if available and not already set
         if (channel.deviceInfo) {
@@ -250,7 +253,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
         existingByChannelId.delete(channel.id);
       } else {
         const streamType = this.platformConfig.streamType || DEFAULT_PLATFORM_CONFIG.streamType;
-        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType, channel.deviceInfo, channel.standalone);
+        const newCamera = this.createCameraConfig(channel.id, channel.name, streamType, channel.deviceInfo, channel.standalone, channel.doorbell);
         this.log.info(`Discovered new camera: ${newCamera.name} (Channel ${channel.id})`);
         result.push(newCamera);
       }
@@ -270,6 +273,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     streamType: StreamType,
     deviceInfo?: { manufacturer?: string; model?: string; serialNumber?: string; firmwareVersion?: string },
     standalone?: boolean,
+    doorbell?: boolean,
   ): CameraConfig {
     if (!this.discovery) throw new Error('Discovery not initialized');
 
@@ -286,6 +290,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
       channelId,
       name,
       ...(standalone ? { standalone: true } : {}),
+      ...(doorbell ? { doorbell: true } : {}),
       manufacturer,
       model,
       serialNumber,
@@ -415,7 +420,7 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
 
     }
 
-    const cameraAccessory = new CameraAccessory(this.api, accessory, camera, this.ffmpegPath, this.log);
+    const cameraAccessory = new CameraAccessory(this.api, accessory, camera, this.ffmpegPath, this.log, this.api_client);
     this.cameraAccessories.set(camera.channelId, cameraAccessory);
 
     if (isNew) {
@@ -425,6 +430,9 @@ export class HikvisionPlatform implements DynamicPlatformPlugin {
     } else {
       this.log.debug(`Skipping registration for existing accessory: ${camera.name}`);
     }
+
+    // Optional features probe the device in the background; they never block startup.
+    void cameraAccessory.startFeatures();
   }
 
   private cleanupOrphanedAccessories(cameras: CameraConfig[]): void {

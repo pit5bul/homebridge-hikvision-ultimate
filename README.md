@@ -8,10 +8,11 @@
 
 Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, motion detection, and hardware-accelerated streaming.
 
-## What's New in v2.1.4
+## What's New in v2.2.0
 
-- **Stream Type Override removed from UI** — configure stream type globally via Default Stream Type. Advanced users can still set `streamType` per-camera in config.json directly.
-- **Security patch** — resolved `micromatch` Method Injection vulnerability in dev dependencies.
+- **Doorbell (experimental)** — Hikvision video intercom door stations ring a HomeKit doorbell.
+- **White light, siren and strobe (experimental)** — optional HomeKit switches for cameras with a supplement light, siren or flashing light.
+- Everything new is **off by default**; existing setups behave exactly as before.
 
 ---
 
@@ -151,6 +152,14 @@ Discovered standalone cameras are saved with `"standalone": true`. Their accesso
 | `streamType` | — | Override global stream type for this camera |
 | `motion` | `true` | Enable motion sensor |
 | `motionTimeout` | `1` | Seconds before motion sensor resets (0 = manual) |
+| `doorbell` | `false` | Experimental. Ring a HomeKit doorbell when a video intercom door station is called |
+| `doorbellPollInterval` | `2` | Seconds between call-status checks (1-30) |
+| `whiteLight` | `false` | Experimental. HomeKit light for the camera's white supplement light |
+| `siren` | `false` | Experimental. HomeKit switch for the camera's audible alarm |
+| `sirenDuration` | `10` | Seconds before the siren switches itself off (1-120) |
+| `strobe` | `false` | Experimental. HomeKit switch for the camera's flashing light |
+| `strobeDuration` | `10` | Seconds before the strobe switches itself off (1-60) |
+| `isapiChannelId` | channel ID | Channel number used for the light and strobe commands, if your device expects a different one |
 
 ### Per-Camera Video Options (`videoConfig`)
 
@@ -267,6 +276,38 @@ Motion events are received via the ISAPI alert stream (`/ISAPI/Event/notificatio
 | `shelteralarm` | Video Tampering |
 
 Enable `debugMotion: true` in Global FFmpeg settings to log all raw events — useful for diagnosing motion issues.
+
+---
+
+## Doorbell and deterrence (experimental)
+
+These features are **off by default** and were built from Hikvision's ISAPI documentation and community reports. Behaviour varies by model and firmware, so please report what works and what does not.
+
+### Doorbell
+
+Door stations (including the V-series villa door station) are detected automatically and the doorbell is switched on for them. For anything else, set `doorbell: true` on the camera. The plugin polls `/ISAPI/VideoIntercom/callStatus` and presses the HomeKit doorbell when the status changes to `ring`. Polling is used because newer intercom firmware no longer sends a ring event on the alert stream. Indoor stations that do not expose port 80 cannot be used. If the device does not report a `ring` status, the doorbell is disabled and a warning is logged.
+
+Live video from a door station depends on its RTSP and snapshot paths, which are not confirmed. If video does not work, set `videoConfig.source` and `videoConfig.stillImageSource` for that camera.
+
+There is no door-unlock accessory.
+
+### White light
+
+Adds a HomeKit light that controls `/ISAPI/Image/channels/<id>/SupplementLight`. Turning it on switches the camera to its white light mode and turning it off restores the previous mode. All other settings are written back unchanged. Notes:
+
+- The light only comes on when the camera is in night mode.
+- Models and firmware differ in the mode names and in the brightness setting. The plugin reads them from the camera's capabilities.
+- If the camera has no white light mode, a warning is logged and the switch does nothing.
+
+### Siren and strobe
+
+Cameras have no documented "sound the siren now" command, so these switches use a workaround: the plugin opens the alarm linkage schedule for the audio alarm (or the flashing light) around the clock, then restores your original schedule when the switch goes off or the duration runs out. For this to work the camera must already be set up like this in its web interface:
+
+- Alarm input set to normally closed.
+- Only **Flashing Alarm** and/or **Audio Warning** enabled as linkage methods.
+- The alarm output schedules cleared.
+
+The original schedule is saved with the accessory, so it is restored even if Homebridge restarts while the siren is on. If the camera does not support these endpoints, the switch is disabled and a warning is logged. On some firmware these commands return `401` even with the correct password.
 
 ---
 

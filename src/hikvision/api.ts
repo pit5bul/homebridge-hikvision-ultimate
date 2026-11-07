@@ -17,6 +17,18 @@ interface DigestAuth {
 }
 
 /**
+ * Optional per-request settings. Existing callers pass none and keep the original behaviour.
+ */
+interface RequestOptions {
+  /** Request body (PUT/POST). */
+  body?: string;
+  contentType?: string;
+  accept?: string;
+  /** Throw on any non-200 response, including the one after digest authentication. */
+  strict?: boolean;
+}
+
+/**
  * Hikvision ISAPI client with Digest Authentication
  */
 export class HikvisionApi {
@@ -40,6 +52,53 @@ export class HikvisionApi {
   async get<T>(path: string): Promise<T> {
     const response = await this.request('GET', path);
     return this.parseXmlResponse<T>(response);
+  }
+
+  /**
+   * GET returning the raw response text. Throws on any non-200 response.
+   */
+  async getText(path: string, accept = 'application/xml'): Promise<string> {
+    return this.request('GET', path, { accept, strict: true });
+  }
+
+  /**
+   * GET a `?format=json` endpoint and parse the JSON response. Throws on any non-200 response.
+   */
+  async getJson<T>(path: string): Promise<T> {
+    const text = await this.request('GET', path, { accept: 'application/json', strict: true });
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error(`Invalid JSON response from ${path}: ${text.substring(0, 200)}`);
+    }
+  }
+
+  /**
+   * PUT a body and return the response text. Throws on a non-200 response, or when the
+   * device answers 200 with a ResponseStatus whose statusCode is not 1 (OK).
+   */
+  async put(path: string, body: string, contentType: string): Promise<string> {
+    const text = await this.request('PUT', path, {
+      body,
+      contentType,
+      accept: contentType.includes('json') ? 'application/json' : 'application/xml',
+      strict: true,
+    });
+    HikvisionApi.assertStatusOk(path, text);
+    return text;
+  }
+
+  /**
+   * Check an ISAPI ResponseStatus (XML or JSON). A body with no statusCode is accepted.
+   */
+  static assertStatusOk(path: string, text: string): void {
+    const code = text.match(/<statusCode>\s*(\d+)\s*<\/statusCode>/i) || text.match(/"statusCode"\s*:\s*(\d+)/i);
+    if (!code || parseInt(code[1], 10) === 1) {
+      return;
+    }
+    const detail = text.match(/<statusString>([^<]*)<\/statusString>/i) || text.match(/"statusString"\s*:\s*"([^"]*)"/i);
+    const sub = text.match(/<subStatusCode>([^<]*)<\/subStatusCode>/i) || text.match(/"subStatusCode"\s*:\s*"([^"]*)"/i);
+    throw new Error(`Device rejected ${path}: statusCode ${code[1]}${detail ? ` ${detail[1]}` : ''}${sub ? ` (${sub[1]})` : ''}`);
   }
 
   /**
@@ -111,8 +170,8 @@ export class HikvisionApi {
   /**
    * Make an HTTP request with digest authentication
    */
-  private async request(method: string, path: string): Promise<string> {
-    const result = await this.requestRaw(method, path, false);
+  private async request(method: string, path: string, options?: RequestOptions): Promise<string> {
+    const result = await this.requestRaw(method, path, false, options);
     return new Promise((resolve, reject) => {
       let data = '';
       result.response.on('data', (chunk: Buffer) => {
@@ -132,9 +191,10 @@ export class HikvisionApi {
     method: string,
     path: string,
     keepAlive: boolean,
+    options?: RequestOptions,
   ): Promise<{ request: http.ClientRequest; response: IncomingMessage }> {
     // First request to get WWW-Authenticate challenge
-    const firstResponse = await this.makeRequest(method, path, undefined, keepAlive);
+    const firstResponse = await this.makeRequest(method, path, undefined, keepAlive, options);
 
     if (firstResponse.response.statusCode === 401) {
       // Parse WWW-Authenticate header
@@ -151,11 +211,17 @@ export class HikvisionApi {
       const authHeader = this.computeDigestHeader(method, path);
 
       // Second request with auth header
-      return this.makeRequest(method, path, authHeader, keepAlive);
+      const secondResponse = await this.makeRequest(method, path, authHeader, keepAlive, options);
+      if (options?.strict && secondResponse.response.statusCode !== 200) {
+        const detail = await this.readErrorBody(secondResponse.response);
+        throw new Error(`HTTP ${secondResponse.response.statusCode}: ${secondResponse.response.statusMessage}${detail}`);
+      }
+      return secondResponse;
     }
 
     if (firstResponse.response.statusCode !== 200) {
-      throw new Error(`HTTP ${firstResponse.response.statusCode}: ${firstResponse.response.statusMessage}`);
+      const detail = options?.strict ? await this.readErrorBody(firstResponse.response) : '';
+      throw new Error(`HTTP ${firstResponse.response.statusCode}: ${firstResponse.response.statusMessage}${detail}`);
     }
 
     return firstResponse;
@@ -169,21 +235,28 @@ export class HikvisionApi {
     path: string,
     authHeader?: string,
     keepAlive = false,
+    extra?: RequestOptions,
   ): Promise<{ request: http.ClientRequest; response: IncomingMessage }> {
     return new Promise((resolve, reject) => {
+      const headers: Record<string, string> = {
+        'Accept': extra?.accept ?? 'application/xml',
+      };
+      if (extra?.body !== undefined) {
+        headers['Content-Type'] = extra.contentType ?? 'application/xml';
+        headers['Content-Length'] = Buffer.byteLength(extra.body).toString();
+      }
+
       const options: http.RequestOptions = {
         hostname: this.host,
         port: this.port,
         path,
         method,
-        headers: {
-          'Accept': 'application/xml',
-        },
+        headers,
         timeout: keepAlive ? 0 : 30000,
       };
 
       if (authHeader) {
-        (options.headers as Record<string, string>)['Authorization'] = authHeader;
+        headers['Authorization'] = authHeader;
       }
 
       const request = this.protocol.request(options, (response) => {
@@ -196,7 +269,27 @@ export class HikvisionApi {
         reject(new Error('Request timeout'));
       });
 
-      request.end();
+      if (extra?.body !== undefined) {
+        request.end(extra.body);
+      } else {
+        request.end();
+      }
+    });
+  }
+
+  /**
+   * Read a short excerpt of an error response body for the error message.
+   */
+  private readErrorBody(response: IncomingMessage): Promise<string> {
+    return new Promise((resolve) => {
+      let data = '';
+      const finish = () => resolve(data.trim() ? ` - ${data.trim().replace(/\s+/g, ' ').substring(0, 200)}` : '');
+      response.on('data', (chunk: Buffer) => {
+        if (data.length < 400) data += chunk.toString();
+      });
+      response.on('end', finish);
+      response.on('error', finish);
+      setTimeout(finish, 3000).unref();
     });
   }
 

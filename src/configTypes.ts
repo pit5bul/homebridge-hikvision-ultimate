@@ -69,6 +69,20 @@ export interface CameraConfig {
   motion?: boolean;
   motionTimeout?: number;
 
+  // Doorbell (video intercom door station)
+  doorbell?: boolean;
+  doorbellPollInterval?: number;
+
+  // Deterrence controls (experimental, all off by default)
+  whiteLight?: boolean;
+  siren?: boolean;
+  sirenDuration?: number;
+  strobe?: boolean;
+  strobeDuration?: number;
+
+  // Channel number used for Image/Event ISAPI calls when it differs from channelId
+  isapiChannelId?: number;
+
   // Control
   unbridge?: boolean;
   enabled?: boolean;
@@ -156,6 +170,8 @@ export interface DiscoveredChannel {
   inputPort: number;
   enabled: boolean;
   standalone?: boolean;
+  /** Set when the device is a video intercom door station (it answers call status). */
+  doorbell?: boolean;
   resolutions?: string[];
   deviceInfo?: {
     manufacturer?: string;

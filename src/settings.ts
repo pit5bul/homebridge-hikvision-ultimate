@@ -70,7 +70,16 @@ export const DEFAULT_CAMERA_CONFIG = {
   enabled: true,
   manufacturer: 'Hikvision',
   model: 'IP Camera',
+  doorbellPollInterval: 2,
+  sirenDuration: 10,
+  strobeDuration: 10,
 };
+
+/**
+ * Limits for the optional deterrence controls
+ */
+export const MAX_SIREN_SECONDS = 120;
+export const MAX_STROBE_SECONDS = 60;
 
 /**
  * Stream type to RTSP channel suffix mapping

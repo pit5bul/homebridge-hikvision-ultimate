@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-07
+
+### ✨ Added
+
+- **Doorbell (experimental)** — video intercom door stations are detected automatically (`/ISAPI/VideoIntercom/callStatus`) and ring a HomeKit doorbell. Call status is polled (default 2 s) because newer firmware no longer sends a ring event. Opt-in per camera with `doorbell`.
+- **White light (experimental)** — HomeKit light for the camera's supplement light via `/ISAPI/Image/channels/<id>/SupplementLight`. Reads the camera's capabilities, keeps all other settings, and restores the previous mode when switched off. Opt-in with `whiteLight`.
+- **Siren and strobe (experimental)** — HomeKit switches that open the audio-alarm or flashing-light linkage schedule and restore the original afterwards, with an automatic switch-off (`sirenDuration`, `strobeDuration`). The camera must be pre-configured; see the README. Opt-in with `siren` and `strobe`.
+- Config UI sections and a `isapiChannelId` override for the new features.
+
+### 🎨 Changed
+
+- The ISAPI client gained strict JSON/XML GET and PUT helpers that report HTTP errors and a device `ResponseStatus` failure. Existing requests behave as before.
+
 ## [2.1.6] - 2026-11-07
 
 > v2.1.5 was tagged without a version bump, so its publish to npm failed. 2.1.6 contains the same code and is the first npm release since 2.1.4.

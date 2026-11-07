@@ -157,6 +157,60 @@
               "minimum": 0,
               "description": "Seconds after motion stops before the sensor resets. 0 = never auto-reset."
             },
+            "doorbell": {
+              "title": "Enable Doorbell",
+              "type": "boolean",
+              "default": false,
+              "description": "For a Hikvision video intercom door station: shows a HomeKit doorbell and sends a notification when the button is pressed. Set automatically when discovery detects a door station."
+            },
+            "doorbellPollInterval": {
+              "title": "Doorbell Check Interval (seconds)",
+              "type": "integer",
+              "default": 2,
+              "minimum": 1,
+              "maximum": 30,
+              "description": "How often the door station is asked for its call status. Lower is quicker to notify; 2 seconds is a good balance."
+            },
+            "whiteLight": {
+              "title": "Enable White Light (experimental)",
+              "type": "boolean",
+              "default": false,
+              "description": "Shows a HomeKit light that controls the camera's white supplement light. Only works on cameras that have one, and only comes on when the camera is in night mode."
+            },
+            "siren": {
+              "title": "Enable Siren Switch (experimental)",
+              "type": "boolean",
+              "default": false,
+              "description": "Shows a HomeKit switch that sounds the camera's audible warning. The camera must be set up first as described in the README (Siren and Strobe). It switches itself off after the duration below."
+            },
+            "sirenDuration": {
+              "title": "Siren Maximum Duration (seconds)",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 120,
+              "description": "The siren switch always turns itself off after this long."
+            },
+            "strobe": {
+              "title": "Enable Strobe Switch (experimental)",
+              "type": "boolean",
+              "default": false,
+              "description": "Shows a HomeKit switch that flashes the camera's warning light. The camera must be set up first as described in the README (Siren and Strobe). It switches itself off after the duration below."
+            },
+            "strobeDuration": {
+              "title": "Strobe Maximum Duration (seconds)",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 60,
+              "description": "The strobe switch always turns itself off after this long."
+            },
+            "isapiChannelId": {
+              "title": "Camera Channel for Light / Siren / Strobe",
+              "type": "integer",
+              "minimum": 1,
+              "description": "Only if the light, siren or strobe do not respond: the channel number the camera or recorder uses for these controls, when it differs from Channel ID. Leave empty normally."
+            },
             "videoConfig": {
               "title": "Video Configuration",
               "type": "object",
@@ -493,6 +547,41 @@
               "items": [
                 "cameras[].motion",
                 "cameras[].motionTimeout"
+              ]
+            },
+            {
+              "key": "cameras[]",
+              "type": "section",
+              "title": "🔔 Doorbell (video intercom)",
+              "expandable": true,
+              "expanded": false,
+              "items": [
+                "cameras[].doorbell",
+                {
+                  "key": "cameras[].doorbellPollInterval",
+                  "condition": "model.cameras[arrayIndex].doorbell"
+                }
+              ]
+            },
+            {
+              "key": "cameras[]",
+              "type": "section",
+              "title": "🚨 Deterrence: light, siren, strobe (experimental)",
+              "expandable": true,
+              "expanded": false,
+              "items": [
+                "cameras[].whiteLight",
+                "cameras[].siren",
+                {
+                  "key": "cameras[].sirenDuration",
+                  "condition": "model.cameras[arrayIndex].siren"
+                },
+                "cameras[].strobe",
+                {
+                  "key": "cameras[].strobeDuration",
+                  "condition": "model.cameras[arrayIndex].strobe"
+                },
+                "cameras[].isapiChannelId"
               ]
             },
             {

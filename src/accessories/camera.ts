@@ -10,7 +10,14 @@ import {
 import { CameraConfig } from '../configTypes';
 import { StreamingDelegate } from '../streaming/delegate';
 import { RecordingDelegate } from '../streaming/recordingDelegate';
-import { DEFAULT_CAMERA_CONFIG } from '../settings';
+import {
+  DEFAULT_CAMERA_CONFIG,
+  MAX_SIREN_SECONDS,
+  MAX_STROBE_SECONDS,
+} from '../settings';
+import { HikvisionApi } from '../hikvision/api';
+import { DoorbellFeature } from './doorbell';
+import { AlarmLinkageFeature, WhiteLightFeature } from './deterrence';
 
 export class CameraAccessory {
   private readonly hap: HAP;
@@ -20,6 +27,10 @@ export class CameraAccessory {
   private readonly recordingDelegate?: RecordingDelegate;
   private motionDetected = false;
   private motionTimeout?: NodeJS.Timeout;
+  private doorbell?: DoorbellFeature;
+  private whiteLight?: WhiteLightFeature;
+  private siren?: AlarmLinkageFeature;
+  private strobe?: AlarmLinkageFeature;
 
   constructor(
     api: API,
@@ -27,6 +38,7 @@ export class CameraAccessory {
     private readonly cameraConfig: CameraConfig,
     videoProcessor: string,
     private readonly log: Logger,
+    isapi?: HikvisionApi,
   ) {
     this.hap = api.hap;
     this.api = api;
@@ -141,6 +153,65 @@ export class CameraAccessory {
       const existingMotion = this.accessory.getService(this.hap.Service.MotionSensor);
       if (existingMotion) this.accessory.removeService(existingMotion);
     }
+
+    this.setupOptionalFeatures(isapi);
+  }
+
+  /**
+   * Doorbell and deterrence controls. All are opt-in per camera; a feature that is switched
+   * off has its HomeKit service removed so nothing stale is left on the accessory.
+   */
+  private setupOptionalFeatures(isapi?: HikvisionApi): void {
+    const config = this.cameraConfig;
+    const name = config.name;
+    const isapiChannelId = config.isapiChannelId ?? config.channelId;
+    const persist = () => this.api.updatePlatformAccessories([this.accessory]);
+
+    if (config.doorbell && isapi) {
+      this.doorbell = new DoorbellFeature(
+        this.hap, this.accessory, name, isapi,
+        Math.max(1, Math.min(30, config.doorbellPollInterval ?? DEFAULT_CAMERA_CONFIG.doorbellPollInterval)),
+        this.log,
+      );
+    } else {
+      DoorbellFeature.remove(this.hap, this.accessory);
+    }
+
+    if (config.whiteLight && isapi) {
+      this.whiteLight = new WhiteLightFeature(this.hap, this.accessory, name, isapi, isapiChannelId, persist, this.log);
+    } else {
+      WhiteLightFeature.remove(this.hap, this.accessory);
+    }
+
+    if (config.siren && isapi) {
+      const seconds = Math.max(1, Math.min(MAX_SIREN_SECONDS, config.sirenDuration ?? DEFAULT_CAMERA_CONFIG.sirenDuration));
+      this.siren = new AlarmLinkageFeature(this.hap, this.accessory, name, 'siren', isapi, isapiChannelId, seconds, persist, this.log);
+    } else {
+      AlarmLinkageFeature.remove(this.hap, this.accessory, 'siren');
+    }
+
+    if (config.strobe && isapi) {
+      const seconds = Math.max(1, Math.min(MAX_STROBE_SECONDS, config.strobeDuration ?? DEFAULT_CAMERA_CONFIG.strobeDuration));
+      this.strobe = new AlarmLinkageFeature(this.hap, this.accessory, name, 'strobe', isapi, isapiChannelId, seconds, persist, this.log);
+    } else {
+      AlarmLinkageFeature.remove(this.hap, this.accessory, 'strobe');
+    }
+  }
+
+  /**
+   * Probe the device and start the optional features. Each feature reports its own problems
+   * in the log and never affects streaming, motion or recording.
+   */
+  async startFeatures(): Promise<void> {
+    const features = [this.doorbell, this.whiteLight, this.siren, this.strobe];
+    await Promise.all(features.map(async (feature) => {
+      if (!feature) return;
+      try {
+        await feature.start();
+      } catch (err) {
+        this.log.warn(`Optional feature failed to start for ${this.cameraConfig.name}: ${err}`);
+      }
+    }));
   }
 
   get channelId(): number {
@@ -172,6 +243,10 @@ export class CameraAccessory {
   }
 
   shutdown(): void {
+    this.doorbell?.shutdown();
+    this.whiteLight?.shutdown();
+    this.siren?.shutdown();
+    this.strobe?.shutdown();
     if (this.motionTimeout) clearTimeout(this.motionTimeout);
     this.streamingDelegate.stopAllStreams();
   }
