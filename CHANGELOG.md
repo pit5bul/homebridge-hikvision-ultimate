@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-11-07
+
+> v2.1.5 was tagged without a version bump, so its publish to npm failed. 2.1.6 contains the same code and is the first npm release since 2.1.4.
+
 ### ✨ Added
 
 - **Standalone IP camera support** — when `host` is a Hikvision IP camera rather than an NVR (`deviceType` `IPCamera`, `IPDome`, `IPZoom` or `PTZ` in `/ISAPI/System/deviceInfo`), discovery exposes it as a single camera on channel 1 instead of failing on `/ISAPI/ContentMgmt/InputProxy/channels` (403/404 on cameras). HKSV, motion events and snapshots work unchanged.
