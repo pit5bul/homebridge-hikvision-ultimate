@@ -1,6 +1,6 @@
 {
   "name": "homebridge-hikvision-ultimate",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Homebridge plugin for Hikvision NVR cameras with ISAPI discovery, motion detection, doorbell, and FFmpeg streaming",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,7 +37,7 @@
     "url": "https://github.com/pit5bul/homebridge-hikvision-ultimate/issues"
   },
   "engines": {
-    "node": "^18.17.0 || ^20.9.0 || ^22 || ^24",
+    "node": "^18.17.0 || ^20.9.0 || ^22 || ^24 || ^26",
     "homebridge": "^1.6.0 || ^2.0.0-beta.0"
   },
   "dependencies": {

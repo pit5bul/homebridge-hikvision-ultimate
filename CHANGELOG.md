@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-11-20
+
+### Changed
+- Declared Node.js 26 support: `engines.node` now includes `^26`. Homebridge 2.5.0 supports
+  Node 26 and Homebridge UI flagged the plugin as incompatible because the range stopped at
+  `^24`. Only the declared range changed, no code.
+
 ## [2.2.0] - 2026-11-07
 
 ### ✨ Added
