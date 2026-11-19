@@ -8,7 +8,11 @@
 
 Homebridge plugin for Hikvision NVR cameras with **automatic ISAPI discovery**, motion detection, doorbell, and hardware-accelerated streaming.
 
-## What's New in v2.2.0
+## What's New in v2.2.1
+
+- **Node.js 26 supported** — the declared `engines` range now includes Node 26, so Homebridge UI no longer flags the plugin as incompatible.
+
+From v2.2.0:
 
 - **Doorbell (experimental)** — Hikvision video intercom door stations ring a HomeKit doorbell.
 - **White light, siren and strobe (experimental)** — optional HomeKit switches for cameras with a supplement light, siren or flashing light.
